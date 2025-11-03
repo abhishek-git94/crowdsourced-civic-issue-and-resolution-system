@@ -29,7 +29,10 @@ def report_issue():
         name = request.form['name']
         issue = request.form['issue']
         location = request.form['location']
-
+        file = request.files.get('attachment')
+        if file:
+            upload = os.path.join('static', 'uploads', file.filename)
+            file.save(upload)   
         # Correct grammar using LanguageTool
         corrected_issue = correct_text(issue)
 
