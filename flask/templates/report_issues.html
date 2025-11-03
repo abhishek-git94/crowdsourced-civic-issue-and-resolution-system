@@ -20,6 +20,14 @@
         <input type="text" name="location" class="form-control" placeholder="E.g. MG Road, Indore" required>
     </div>
 
+    <div class="mb-3">
+        <label class="form-label">Attach File</label>
+        <input type="file" id="attachment" name="attachment" class="form-control" accept="image/*,video/*,.pdf,.doc,.docx">
+        <small class="text-muted">You can upload a photo, short video, or document (max 10MB).</small>
+        <div id="preview" class="mt-3"></div>
+    </div>
+
+
     <button type="submit" class="btn btn-primary w-100">Submit Issue</button>
 </form>
 
