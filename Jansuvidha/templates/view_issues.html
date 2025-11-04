@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>View Issues</title>
+</head>
+<body>
+  <h1>Reported Issues</h1>
+  <table border="1" cellpadding="8">
+    <tr>
+      <th>Name</th>
+      <th>Issue</th>
+      <th>Location</th>
+      <th>File</th>
+      <th>Status</th>
+      <th>Date</th>
+    </tr>
+    {% for i in issues %}
+    <tr>
+      <td>{{ i.name }}</td>
+      <td>{{ i.issue }}</td>
+      <td>{{ i.location }}</td>
+      <td>
+        {% if i.file %}
+          <a href="{{ url_for('static', filename=i.file) }}" target="_blank">View</a>
+        {% else %}
+          None
+        {% endif %}
+      </td>
+      <td>{{ i.status }}</td>
+      <td>{{ i.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+</body>
+</html>
