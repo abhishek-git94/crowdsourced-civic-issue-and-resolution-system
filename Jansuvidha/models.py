@@ -4,15 +4,6 @@ from sqlalchemy import Integer, String, Text, DateTime, ForeignKey, func
 class Base(DeclarativeBase):
     pass
 
-class User(Base):
-    __tablename__ = "users"
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    email: Mapped[str] = mapped_column(String, unique=True, nullable=False)
-    name: Mapped[str | None] = mapped_column(Text)
-    created_at: Mapped[DateTime] = mapped_column(DateTime(timezone=True), server_default=func.now())
-    issues: Mapped[list["Issue"]] = relationship(back_populates="user", cascade="all, delete-orphan")
-
-
 class Issue(Base):
     __tablename__ = "issues"
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
