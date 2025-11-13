@@ -2,5 +2,8 @@ flask
 sqlalchemy
 psycopg2-binary
 python-dotenv
-
+langchain-ollama
+langchain
+chromadb
+ultralytics
 #to install everything- pip install -r requirements.txt

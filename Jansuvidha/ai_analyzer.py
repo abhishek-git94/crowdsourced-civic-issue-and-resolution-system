@@ -12,7 +12,12 @@ class CivicAIAnalyzer:
         print(f"🚀 Civic AI Analyzer initialized with Ollama model: {text_model}")
         
         # Load YOLO
-        self.yolo = YOLO(self.yolo_model)
+        model_path = os.path.join(os.path.dirname(__file__), "last.pt")
+        print("🔥 Loading YOLO model from:", model_path)
+
+        self.yolo = YOLO(model_path)
+
+
         
         # Initialize RAG (ChromaDB)
         try:
