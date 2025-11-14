@@ -1,19 +1,23 @@
-# app.py
-from flask import Flask, request, render_template, redirect, url_for, flash, jsonify
 import os
+from flask import Flask, request, render_template, redirect, url_for, flash, jsonify
 from sqlalchemy import select
 from database import engine, SessionLocal
-from models import Issue  # Base not needed here
+from models import Base, Issue
 from ai_analyzer import CivicAIAnalyzer
 
-# Initialize Flask App
 app = Flask(__name__, template_folder='templates', static_folder='static')
 app.secret_key = "secret123"
 
-# Initialize AI Analyzer with trained YOLO model
+# Only create tables LOCALLY (never on Render)
+if os.getenv("FLASK_ENV") == "development":
+    print("📌 Development mode → creating tables locally")
+    Base.metadata.create_all(bind=engine)
+else:
+    print("🚀 Production mode → NOT creating tables automatically")
+
 ai_analyzer = CivicAIAnalyzer(
     text_model="llama3",
-    yolo_model="yolov8_civic.pt"   # <-- your trained model
+    yolo_model="yolov8_civic.pt"
 )
 
 # ROUTES
