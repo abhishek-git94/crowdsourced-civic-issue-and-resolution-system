@@ -1,0 +1,26 @@
+<!-- templates/manager_dashboard.html -->
+{% extends "base.html" %}
+{% block content %}
+<h3>Manager Dashboard</h3>
+<p>Assigned to you:</p>
+<div class="list-group">
+  {% for it in assigned %}
+  <div class="list-group-item d-flex justify-content-between align-items-start">
+    <div>
+      <div class="fw-bold">{{ it.issue[:80] }}{% if it.issue|length>80 %}...{% endif %}</div>
+      <small class="text-muted">{{ it.location }} • {{ it.created_at.strftime('%Y-%m-%d %H:%M') }}</small>
+    </div>
+    <div>
+      <form method="post" action="{{ url_for('manager_update', issue_id=it.id) }}">
+        <select name="status" class="form-select form-select-sm d-inline w-auto">
+          <option{{ ' selected' if it.status=='Pending' }}>Pending</option>
+          <option{{ ' selected' if it.status=='In Progress' }}>In Progress</option>
+          <option{{ ' selected' if it.status=='Resolved' }}>Resolved</option>
+        </select>
+        <button class="btn btn-sm btn-success ms-1">Save</button>
+      </form>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}

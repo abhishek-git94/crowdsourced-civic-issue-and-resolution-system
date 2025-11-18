@@ -1,4 +1,6 @@
-/* static/css/style.css */
+/* --------------------------------------------------
+   YOUR ORIGINAL CSS (kept exactly as provided)
+-------------------------------------------------- */
 
 body {
     background-color: #f9fafc;
@@ -27,4 +29,72 @@ footer {
     position: relative;
     bottom: 0;
     width: 100%;
+}
+
+/* --------------------------------------------------
+   OPTIONAL ENHANCEMENTS (SAFE + MINIMAL)
+   These styles do NOT override your existing ones.
+-------------------------------------------------- */
+
+/* Better card shadow */
+.card {
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+}
+
+/* Navbar spacing */
+.navbar {
+    padding-top: 0.6rem;
+    padding-bottom: 0.6rem;
+}
+
+/* Buttons */
+.btn {
+    border-radius: 6px;
+    font-weight: 500;
+}
+
+/* Issue listing */
+.issue-photo {
+    max-height: 180px;
+    width: 100%;
+    object-fit: cover;
+    border-radius: 10px;
+}
+
+/* AI status text */
+.ai-status-success {
+    color: #0f7b22;
+    font-weight: 600;
+}
+
+.ai-status-error {
+    color: #b00020;
+    font-weight: 600;
+}
+
+/* Spacing adjustments */
+.container {
+    max-width: 1140px;
+}
+
+/* Smooth hover transitions for links */
+a {
+    transition: 0.2s ease-in-out;
+}
+a:hover {
+    opacity: 0.85;
+}
+
+/* Footer polish */
+footer {
+    background: #fff;
+    border-top: 1px solid #e7e7e7;
+    padding: 15px 0;
+}
+
+/* Responsive tweaks */
+@media (max-width: 768px) {
+    .card {
+        border-radius: 10px;
+    }
 }

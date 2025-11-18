@@ -1,0 +1,29 @@
+<!-- templates/auth/register.html -->
+{% extends "base.html" %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-7 col-lg-6">
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <h4 class="card-title mb-4">Create Account</h4>
+        <form method="post" action="{{ url_for('auth.register') }}">
+          <div class="mb-3">
+            <label class="form-label">Full name</label>
+            <input name="name" type="text" class="form-control" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Email</label>
+            <input name="email" type="email" class="form-control" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Password</label>
+            <input name="password" type="password" class="form-control" required>
+          </div>
+          <button class="btn btn-success w-100">Register</button>
+        </form>
+      </div>
+    </div>
+    <p class="text-center mt-3 small">Already have an account? <a href="{{ url_for('auth.login') }}">Login</a></p>
+  </div>
+</div>
+{% endblock %}

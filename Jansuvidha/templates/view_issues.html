@@ -1,35 +1,37 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <title>View Issues</title>
-</head>
-<body>
-  <h1>Reported Issues</h1>
-  <table border="1" cellpadding="8">
-    <tr>
-      <th>Name</th>
-      <th>Issue</th>
-      <th>Location</th>
-      <th>File</th>
-      <th>Status</th>
-      <th>Date</th>
-    </tr>
-    {% for i in issues %}
-    <tr>
-      <td>{{ i.name }}</td>
-      <td>{{ i.issue }}</td>
-      <td>{{ i.location }}</td>
-      <td>
+{% extends "base.html" %}
+{% block content %}
+<h3 class="mb-3">Reported Issues</h3>
+
+<div class="row g-3">
+  {% for i in issues %}
+  <div class="col-md-6 col-lg-4">
+    <div class="card h-100 shadow-sm">
+      <div class="card-body">
+        <h5 class="card-title">{{ i.issue[:70] }}{% if i.issue|length > 70 %}...{% endif %}</h5>
+        <p class="text-muted small">
+          {{ i.location }} • {{ i.created_at.strftime('%Y-%m-%d %H:%M') }}
+        </p>
+
         {% if i.file %}
-          <a href="{{ url_for('static', filename=i.file) }}" target="_blank">View</a>
-        {% else %}
-          None
+        <img src="{{ url_for('static', filename=i.file) }}" class="img-fluid rounded mb-2" />
         {% endif %}
-      </td>
-      <td>{{ i.status }}</td>
-      <td>{{ i.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
-    </tr>
-    {% endfor %}
-  </table>
-</body>
-</html>
+
+        <p class="card-text">
+          {{ i.issue[:150] }}{% if i.issue|length > 150 %}...{% endif %}
+        </p>
+
+      </div>
+      <div class="card-footer d-flex justify-content-between align-items-center">
+        <span class="badge bg-secondary">{{ i.status }}</span>
+
+        {% if i.file %}
+        <a href="{{ url_for('static', filename=i.file) }}" class="btn btn-sm btn-outline-primary" target="_blank">
+          View Photo
+        </a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}

@@ -1,76 +1,104 @@
 import os
-from flask import Flask, request, render_template, redirect, url_for, flash, jsonify
+from flask import (
+    Flask, request, render_template, redirect, 
+    url_for, flash, jsonify, session
+)
+from flask_migrate import Migrate
 from sqlalchemy import select
+from werkzeug.security import generate_password_hash, check_password_hash
+from werkzeug.utils import secure_filename
+from datetime import datetime
+
 from database import engine, SessionLocal
-from models import Base, Issue
+from models import Base, User, Issue
 from ai_analyzer import CivicAIAnalyzer
 
-app = Flask(__name__, template_folder='templates', static_folder='static')
-app.secret_key = "secret123"
+# NEW FILES
+from auth_blueprint import auth_bp
+from auth_helpers import login_required, role_required
 
-# Only create tables LOCALLY (never on Render)
+# -----------------------------
+# APP INITIALIZATION
+# -----------------------------
+app = Flask(__name__, template_folder='templates', static_folder='static')
+app.secret_key = os.getenv("SECRET_KEY", "secret123")
+
+# Register authentication blueprint
+app.register_blueprint(auth_bp)
+
+# Flask-Migrate
+migrate = Migrate(app, Base)
+
+# Auto-create tables ONLY in development
 if os.getenv("FLASK_ENV") == "development":
-    print("📌 Development mode → creating tables locally")
+    print("📌 Development Mode → Creating tables locally")
     Base.metadata.create_all(bind=engine)
 else:
-    print("🚀 Production mode → NOT creating tables automatically")
+    print("🚀 Production Mode → No auto-create")
 
+# AI Analyzer
 ai_analyzer = CivicAIAnalyzer(
     text_model="llama3",
     yolo_model="yolov8_civic.pt"
 )
 
+# -----------------------------
 # ROUTES
+# -----------------------------
 
 @app.route('/')
 def index():
     return render_template('index.html')
 
-
+# VIEW ISSUES (login required)
 @app.route('/view')
+@login_required
 def view_issues():
-    """Show all reported civic issues."""
+    """Show all reported issues."""
     with SessionLocal() as db:
         issues = db.query(Issue).order_by(Issue.created_at.desc()).all()
-        return render_template('view_issues.html', issues=issues)
+    return render_template('view_issues.html', issues=issues)
 
-
+# REPORT ISSUE (AI-supported)
 @app.route('/report', methods=['GET', 'POST'])
+@login_required
 def report_issue():
-    """Report a new issue (AI auto-fills description from image)."""
     if request.method == 'POST':
-        name = request.form.get('name', '')
+        name = session.get("user_name") or request.form.get('name')
         location = request.form.get('location', '')
         file = request.files.get('attachment')
 
         analysis = None
         file_path = None
 
-        # --- AI Image Analyzer ---
+        # -----------------------------
+        # IMAGE UPLOAD
+        # -----------------------------
         if file and file.filename:
             uploads_folder = os.path.join(app.static_folder, 'uploads')
             os.makedirs(uploads_folder, exist_ok=True)
 
-            # ensure clean filename
-            filename = file.filename.replace(" ", "_")
+            filename = secure_filename(file.filename)
             upload_path = os.path.join(uploads_folder, filename)
             file.save(upload_path)
 
             file_path = f"uploads/{filename}"
 
+            # -----------------------------
+            # AI ANALYSIS PIPELINE
+            # -----------------------------
             try:
-                # FULL pipeline: detect → classify → describe → severity
                 analysis = ai_analyzer.analyze_civic_issue(upload_path, location)
                 issue_text = analysis["description"]
             except Exception as e:
-                print("⚠️ AI analysis failed:", e)
-                issue_text = "(AI could not analyze image)"
+                print("⚠️ AI Error:", e)
+                issue_text = "(AI could not analyze this image)"
         else:
             issue_text = request.form.get('issue', '(No description)')
 
-        # ------------------------------------------------------------
-        # Save to database
-        # ------------------------------------------------------------
+        # -----------------------------
+        # SAVE ISSUE
+        # -----------------------------
         with SessionLocal() as db:
             new_issue = Issue(
                 name=name,
@@ -85,85 +113,107 @@ def report_issue():
             db.add(new_issue)
             db.commit()
 
-        flash(f"Issue reported successfully by {name} at {location}.", "success")
+        flash("Issue reported successfully!", "success")
         return redirect(url_for('report_issue'))
 
     return render_template('report_issues.html')
 
 
-# TEST ROUTES
-
-@app.route("/db-test")
-def db_test():
-    """Quick database connection test."""
-    try:
-        with engine.connect() as conn:
-            conn.execute(select(1))
-            return "✅ Database connected successfully!"
-    except Exception as e:
-        return f"❌ Database connection failed: {e}"
+# -----------------------------
+# ADMIN DASHBOARD
+# -----------------------------
+@app.route("/admin")
+@role_required("admin")
+def admin_dashboard():
+    with SessionLocal() as db:
+        issues = db.query(Issue).order_by(Issue.created_at.desc()).all()
+    return render_template("admin_dashboard.html", issues=issues)
 
 
-@app.route("/ai-test")
-def ai_test():
-    """Test AI description generation."""
-    try:
-        result = ai_analyzer.generate_description(
-            [{"label": "pothole", "confidence": 90}],
-            location="Test Road"
-        )
-        return f"✅ AI working: {result}"
-    except Exception as e:
-        return f"❌ AI error: {e}"
+@app.route("/admin/update_status/<int:issue_id>", methods=["POST"])
+@role_required("admin")
+def update_status(issue_id):
+    new_status = request.form.get("status")
+    with SessionLocal() as db:
+        issue = db.query(Issue).filter_by(id=issue_id).first()
+        if issue:
+            issue.status = new_status
+            db.commit()
+            flash("Status updated!", "success")
+    return redirect(url_for("admin_dashboard"))
 
 
+# -----------------------------
+# MANAGER DASHBOARD
+# -----------------------------
+@app.route("/manager")
+@role_required("manager")
+def manager_dashboard():
+    manager_name = session.get("user_name")
+
+    with SessionLocal() as db:
+        assigned = db.query(Issue).filter_by(assigned_to=manager_name).all()
+
+    return render_template("manager_dashboard.html", assigned=assigned)
+
+
+@app.route("/manager/update/<int:issue_id>", methods=["POST"])
+@role_required("manager")
+def manager_update(issue_id):
+    new_status = request.form.get("status")
+
+    with SessionLocal() as db:
+        issue = db.query(Issue).filter_by(id=issue_id).first()
+        if issue:
+            issue.status = new_status
+            db.commit()
+            flash("Issue updated.", "success")
+
+    return redirect(url_for("manager_dashboard"))
+
+
+# -----------------------------
+# API: AI ANALYSIS ENDPOINT
+# -----------------------------
 @app.route('/analyze-image', methods=['POST'])
 def analyze_image_api():
-    """API endpoint for AI image analysis"""
     try:
         if 'image' not in request.files:
             return jsonify({"error": "No image provided"}), 400
-        
+
         file = request.files['image']
         location = request.form.get('location', 'Unknown location')
 
-        if file.filename == '':
+        if not file.filename:
             return jsonify({"error": "No file selected"}), 400
 
-        from werkzeug.utils import secure_filename
-        from datetime import datetime
-        
         filename = secure_filename(file.filename)
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        temp_filename = f"temp_{timestamp}_{filename}"
-        
+        temp_name = f"temp_{timestamp}_{filename}"
+
         uploads_folder = os.path.join(app.static_folder, 'uploads')
         os.makedirs(uploads_folder, exist_ok=True)
-        temp_path = os.path.join(uploads_folder, temp_filename)
-        
+
+        temp_path = os.path.join(uploads_folder, temp_name)
         file.save(temp_path)
 
-        # Analyze
-        try:
-            result = ai_analyzer.analyze_civic_issue(temp_path, location)
-            return jsonify({
-                "success": True,
-                "description": result['description'],
-                "category": result['category'],
-                "confidence": result['confidence'],
-                "severity": result['severity'],
-                "detected_objects": result['detected_objects'][:5]
-            })
+        result = ai_analyzer.analyze_civic_issue(temp_path, location)
 
-        except Exception as e:
-            if os.path.exists(temp_path):
-                os.remove(temp_path)
-            return jsonify({"error": f"AI analysis failed: {str(e)}"}), 500
-    
+        return jsonify({
+            "success": True,
+            "description": result['description'],
+            "category": result['category'],
+            "confidence": result['confidence'],
+            "severity": result['severity'],
+            "detected_objects": result['detected_objects'][:5]
+        })
+
     except Exception as e:
-        return jsonify({"error": f"Server error: {str(e)}"}), 500
+        return jsonify({"error": str(e)}), 500
 
 
+# -----------------------------
 # ENTRY POINT
+# -----------------------------
 if __name__ == "__main__":
     app.run(debug=True, use_reloader=False)
