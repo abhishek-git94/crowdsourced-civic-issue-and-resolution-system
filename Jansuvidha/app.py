@@ -1,8 +1,7 @@
 import os
 from flask import (
     Flask, request, render_template, redirect, 
-    url_for, flash, jsonify, session
-)
+    url_for, flash, jsonify, session )
 from flask_migrate import Migrate
 from sqlalchemy import select
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -17,9 +16,7 @@ from ai_analyzer import CivicAIAnalyzer
 from auth_blueprint import auth_bp
 from auth_helpers import login_required, role_required
 
-# -----------------------------
 # APP INITIALIZATION
-# -----------------------------
 app = Flask(__name__, template_folder='templates', static_folder='static')
 app.secret_key = os.getenv("SECRET_KEY", "secret123")
 
@@ -42,9 +39,7 @@ ai_analyzer = CivicAIAnalyzer(
     yolo_model="yolov8_civic.pt"
 )
 
-# -----------------------------
 # ROUTES
-# -----------------------------
 
 @app.route('/')
 def index():
@@ -71,9 +66,7 @@ def report_issue():
         analysis = None
         file_path = None
 
-        # -----------------------------
         # IMAGE UPLOAD
-        # -----------------------------
         if file and file.filename:
             uploads_folder = os.path.join(app.static_folder, 'uploads')
             os.makedirs(uploads_folder, exist_ok=True)
@@ -84,9 +77,7 @@ def report_issue():
 
             file_path = f"uploads/{filename}"
 
-            # -----------------------------
             # AI ANALYSIS PIPELINE
-            # -----------------------------
             try:
                 analysis = ai_analyzer.analyze_civic_issue(upload_path, location)
                 issue_text = analysis["description"]
@@ -96,9 +87,7 @@ def report_issue():
         else:
             issue_text = request.form.get('issue', '(No description)')
 
-        # -----------------------------
         # SAVE ISSUE
-        # -----------------------------
         with SessionLocal() as db:
             new_issue = Issue(
                 name=name,
@@ -119,9 +108,7 @@ def report_issue():
     return render_template('report_issues.html')
 
 
-# -----------------------------
 # ADMIN DASHBOARD
-# -----------------------------
 @app.route("/admin")
 @role_required("admin")
 def admin_dashboard():
@@ -143,9 +130,7 @@ def update_status(issue_id):
     return redirect(url_for("admin_dashboard"))
 
 
-# -----------------------------
 # MANAGER DASHBOARD
-# -----------------------------
 @app.route("/manager")
 @role_required("manager")
 def manager_dashboard():
@@ -172,9 +157,7 @@ def manager_update(issue_id):
     return redirect(url_for("manager_dashboard"))
 
 
-# -----------------------------
 # API: AI ANALYSIS ENDPOINT
-# -----------------------------
 @app.route('/analyze-image', methods=['POST'])
 def analyze_image_api():
     try:
@@ -212,8 +195,6 @@ def analyze_image_api():
         return jsonify({"error": str(e)}), 500
 
 
-# -----------------------------
 # ENTRY POINT
-# -----------------------------
 if __name__ == "__main__":
     app.run(debug=True, use_reloader=False)

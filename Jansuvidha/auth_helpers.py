@@ -1,4 +1,3 @@
-# auth_helpers.py
 from functools import wraps
 from flask import session, redirect, url_for, flash, request
 
@@ -7,7 +6,6 @@ def login_required(func):
     def wrapper(*args, **kwargs):
         if not session.get("user_id"):
             flash("Please login to access this page.", "warning")
-            # IMPORTANT FIX HERE 👇
             return redirect(url_for("auth.login", next=request.path))
         return func(*args, **kwargs)
     return wrapper
@@ -20,7 +18,6 @@ def role_required(*roles):
             user_role = session.get("user_role")
             if not user_role:
                 flash("Please login first.", "warning")
-                # SAME FIX HERE 👇
                 return redirect(url_for("auth.login", next=request.path))
 
             if user_role not in roles:

@@ -1,12 +1,9 @@
-# models.py
 from sqlalchemy.orm import DeclarativeBase, mapped_column, Mapped
 from sqlalchemy import Integer, String, Text, DateTime, Float, func
 
 
 class Base(DeclarativeBase):
     pass
-
-
 class User(Base):
     __tablename__ = "users"
 
@@ -21,7 +18,6 @@ class User(Base):
 
     def __repr__(self) -> str:
         return f"<User id={self.id} name={self.name!r} email={self.email!r} role={self.role!r}>"
-
 
 class Issue(Base):
     __tablename__ = "issues"

@@ -29,4 +29,4 @@ future=True,
 )
 
 
-print('✅ SQLAlchemy engine ready')
+print('SQLAlchemy engine ready to go!')
