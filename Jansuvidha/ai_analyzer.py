@@ -3,6 +3,14 @@ from ultralytics import YOLO
 import chromadb
 from datetime import datetime
 import os
+from utils.duplicate_detector import (
+    get_local_embedding,
+    get_openai_embedding,
+    cosine_similarity,
+    embed_to_json,
+    json_to_embed
+)
+
 
 class CivicAIAnalyzer:
     def __init__(self, text_model="phi", yolo_model="yolov8n.pt"):

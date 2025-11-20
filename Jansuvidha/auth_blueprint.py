@@ -69,5 +69,7 @@ def profile():
 
     with SessionLocal() as db:
         user = db.query(User).filter_by(id=uid).first()
-        issues = db.query(Issue).filter_by(name=user.name).order_by(Issue.created_at.desc()).all()
+        issues = db.query(Issue).filter_by(user_id=user.id).order_by(Issue.created_at.desc()).all()
+
     return render_template("auth/profile.html", user=user, issues=issues)
+
