@@ -19,16 +19,31 @@
         <p class="card-text">
           {{ i.issue[:150] }}{% if i.issue|length > 150 %}...{% endif %}
         </p>
-
       </div>
+
       <div class="card-footer d-flex justify-content-between align-items-center">
+
+        <!-- Status -->
         <span class="badge bg-secondary">{{ i.status }}</span>
 
-        {% if i.file %}
-        <a href="{{ url_for('static', filename=i.file) }}" class="btn btn-sm btn-outline-primary" target="_blank">
-          View Photo
-        </a>
-        {% endif %}
+        <div class="d-flex gap-2">
+
+          <!-- Upvote button -->
+          <form action="{{ url_for('upvote_issue', issue_id=i.id) }}" method="POST">
+            <button class="btn btn-sm btn-success" type="submit">
+              👍 {{ i.upvotes }}
+            </button>
+          </form>
+
+          <!-- Photo -->
+          {% if i.file %}
+          <a href="{{ url_for('static', filename=i.file) }}" 
+             class="btn btn-sm btn-outline-primary" target="_blank">
+            View Photo
+          </a>
+          {% endif %}
+        </div>
+
       </div>
     </div>
   </div>

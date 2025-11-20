@@ -14,5 +14,6 @@ flask-wtf
 passlib==1.7.4
 bcrypt==4.1.2
 Werkzeug==3.0.1
+SentenceTransformer
 
 #to install everything- pip install -r requirements.txt
