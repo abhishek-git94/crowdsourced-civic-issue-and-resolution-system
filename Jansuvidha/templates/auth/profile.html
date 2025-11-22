@@ -1,39 +1,58 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="row">
-  <div class="col-md-4">
-    <div class="card mb-4">
-      <div class="card-body">
-        <h5 class="card-title">Profile</h5>
-        <p><strong>Name</strong>: {{ user.name }}</p>
-        <p><strong>Email</strong>: {{ user.email }}</p>
-        <p><strong>Role</strong>: {{ user.role }}</p>
+
+<div class="row justify-content-center">
+  <div class="col-md-6 col-lg-5">
+
+    <div class="card shadow-sm border-0 rounded-4">
+      <div class="card-body p-4">
+
+        <div class="text-center mb-4">
+          <div class="rounded-circle bg-primary text-white d-inline-flex 
+                      justify-content-center align-items-center"
+               style="width:80px; height:80px; font-size:34px;">
+            {{ session.get('user_name','?')[0]|upper }}
+          </div>
+
+          <h3 class="fw-bold mt-3">{{ session.get('user_name') }}</h3>
+          <p class="text-muted">{{ session.get('user_email') }}</p>
+          <span class="badge bg-success">{{ session.get('user_role')|capitalize }}</span>
+        </div>
+
+        <hr>
+
+        <div class="list-group mb-4">
+
+          <a href="{{ url_for('report_issue') }}" class="list-group-item list-group-item-action">
+            Report New Issue
+          </a>
+
+          <a href="{{ url_for('view_issues') }}" class="list-group-item list-group-item-action">
+            View Your Issues
+          </a>
+
+          {% if session.get('user_role') == "admin" %}
+          <a href="{{ url_for('admin_dashboard') }}" class="list-group-item list-group-item-action">
+            Admin Dashboard
+          </a>
+          {% endif %}
+
+          {% if session.get('user_role') == "manager" %}
+          <a href="{{ url_for('manager_dashboard') }}" class="list-group-item list-group-item-action">
+            Manager Dashboard
+          </a>
+          {% endif %}
+
+        </div>
+
+        <a href="{{ url_for('auth.logout') }}" class="btn btn-outline-danger w-100">
+          Logout
+        </a>
+
       </div>
     </div>
-  </div>
 
-  <div class="col-md-8">
-    <h5>Your reports</h5>
-    {% if issues %}
-      <div class="list-group">
-        {% for it in issues %}
-          <div class="list-group-item d-flex justify-content-between align-items-start">
-            <div>
-              <div class="fw-bold">{{ it.issue[:80] }}{% if it.issue|length > 80 %}...{% endif %}</div>
-              <small class="text-muted">{{ it.location }} • {{ it.created_at.strftime('%Y-%m-%d %H:%M') }}</small>
-            </div>
-            <div>
-              <span class="badge bg-secondary">{{ it.status }}</span>
-              {% if it.file %}
-              <a class="btn btn-sm btn-outline-primary ms-2" href="{{ url_for('static', filename=it.file) }}" target="_blank">View</a>
-              {% endif %}
-            </div>
-          </div>
-        {% endfor %}
-      </div>
-    {% else %}
-      <p class="text-muted">You haven't reported any issues yet.</p>
-    {% endif %}
   </div>
 </div>
+
 {% endblock %}

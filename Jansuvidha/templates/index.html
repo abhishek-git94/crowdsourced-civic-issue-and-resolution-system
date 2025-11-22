@@ -1,12 +1,78 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="text-center">
-    <h1 class="mb-4">Welcome to the Civic Issue Tracker</h1>
-    <p class="lead text-muted mb-5">
-        Report civic issues like potholes, garbage, or streetlight failures and help improve your city.
-    </p>
 
-    <a href="{{ url_for('report_issue') }}" class="btn btn-primary btn-lg mx-2">Report an Issue</a>
-    <a href="{{ url_for('view_issues') }}" class="btn btn-outline-secondary btn-lg mx-2">View Reported Issues</a>
+<div class="container py-5">
+
+  <div class="text-center mb-5">
+      <h1 class="fw-bold text-primary mb-3">
+          Welcome to <span class="text-dark">JanSuvidha</span>
+      </h1>
+
+      <p class="lead text-muted">
+          Report civic issues like <b>potholes</b>, <b>garbage</b>, 
+          <b>streetlight failures</b>, and much more.  
+          Together, we make our city better. 
+      </p>
+  </div>
+
+  <!-- Main Buttons -->
+  <div class="d-flex justify-content-center flex-wrap gap-3">
+
+      <a href="{{ url_for('report_issue') }}" 
+         class="btn btn-primary btn-lg px-4 shadow-sm">
+           Report an Issue
+      </a>
+
+      <a href="{{ url_for('view_issues') }}" 
+         class="btn btn-outline-secondary btn-lg px-4 shadow-sm">
+           View Reported Issues
+      </a>
+
+      <a href="{{ url_for('trending_issues') }}"
+         class="btn btn-outline-success btn-lg px-4 shadow-sm">
+           Trending Issues
+      </a>
+
+  </div>
+
+  <!-- Info Section -->
+  <div class="row mt-5">
+
+    <div class="col-md-4 mb-4">
+      <div class="card shadow-sm h-100 border-0">
+        <div class="card-body text-center">
+          <h5 class="fw-semibold text-primary">AI-Assisted Reporting</h5>
+          <p class="text-muted small">
+            Upload a photo and let our AI detect issue type, severity, and more.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-4 mb-4">
+      <div class="card shadow-sm h-100 border-0">
+        <div class="card-body text-center">
+          <h5 class="fw-semibold text-primary">Smart Duplicate Detection</h5>
+          <p class="text-muted small">
+            System automatically checks for similar existing issues to avoid duplicates.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-4 mb-4">
+      <div class="card shadow-sm h-100 border-0">
+        <div class="card-body text-center">
+          <h5 class="fw-semibold text-primary">Upvote Priority</h5>
+          <p class="text-muted small">
+            Citizens can upvote issues so authorities know what matters the most.
+          </p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
 </div>
+
 {% endblock %}

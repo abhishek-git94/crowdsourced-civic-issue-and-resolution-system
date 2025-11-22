@@ -1,31 +1,82 @@
 {% extends "base.html" %}
 {% block content %}
-<h3>Admin Dashboard</h3>
 
-<!-- list of issues with quick controls -->
-<table class="table table-striped">
-  <thead><tr><th>ID</th><th>Reporter</th><th>Location</th><th>Category</th><th>Status</th><th>Assigned</th><th>Action</th></tr></thead>
-  <tbody>
-    {% for it in issues %}
-    <tr>
-      <td>{{ it.id }}</td>
-      <td>{{ it.name }}</td>
-      <td>{{ it.location }}</td>
-      <td>{{ it.category or '-' }}</td>
-      <td>{{ it.status }}</td>
-      <td>{{ it.assigned_to or '-' }}</td>
-      <td>
-        <form method="post" action="{{ url_for('update_status', issue_id=it.id) }}" class="d-inline">
-          <select name="status" class="form-select form-select-sm d-inline w-auto">
-            <option{{ ' selected' if it.status=='Pending' }}>Pending</option>
-            <option{{ ' selected' if it.status=='In Progress' }}>In Progress</option>
-            <option{{ ' selected' if it.status=='Resolved' }}>Resolved</option>
-          </select>
-          <button class="btn btn-sm btn-primary ms-1">Update</button>
-        </form>
-      </td>
-    </tr>
-    {% endfor %}
-  </tbody>
-</table>
+<h3 class="fw-bold text-primary mb-4">🛠 Admin Dashboard</h3>
+
+<div class="card shadow-sm border-0">
+  <div class="card-body">
+
+    {% if issues|length == 0 %}
+    <div class="alert alert-info text-center">No issues reported yet.</div>
+    {% else %}
+
+    <div class="table-responsive">
+      <table class="table align-middle table-hover">
+        <thead class="table-light">
+          <tr class="fw-semibold text-secondary">
+            <th>ID</th>
+            <th>Reporter</th>
+            <th>Location</th>
+            <th>Category</th>
+            <th>Status</th>
+            <th>Assigned</th>
+            <th class="text-center">Update</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          {% for it in issues %}
+          <tr>
+
+            <td class="fw-bold text-primary">{{ it.id }}</td>
+
+            <td>{{ it.name }}</td>
+
+            <td>{{ it.location }}</td>
+
+            <td>{{ it.category or '-' }}</td>
+
+            <!-- Colored Status Badge -->
+            <td>
+              <span class="badge 
+                {% if it.status == 'Resolved' %} bg-success
+                {% elif it.status == 'In Progress' %} bg-warning text-dark
+                {% else %} bg-secondary
+                {% endif %}
+              ">
+                {{ it.status }}
+              </span>
+            </td>
+
+            <td>{{ it.assigned_to or '-' }}</td>
+
+            <!-- Update Dropdown + Button -->
+            <td class="text-center">
+
+              <form method="post" action="{{ url_for('update_status', issue_id=it.id) }}" class="d-flex gap-2 justify-content-center">
+
+                <select name="status" class="form-select form-select-sm w-auto">
+                  <option value="Pending"     {% if it.status=='Pending' %}selected{% endif %}>Pending</option>
+                  <option value="In Progress" {% if it.status=='In Progress' %}selected{% endif %}>In Progress</option>
+                  <option value="Resolved"    {% if it.status=='Resolved' %}selected{% endif %}>Resolved</option>
+                </select>
+
+                <button class="btn btn-sm btn-primary">
+                  Update
+                </button>
+              </form>
+
+            </td>
+
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    {% endif %}
+
+  </div>
+</div>
+
 {% endblock %}

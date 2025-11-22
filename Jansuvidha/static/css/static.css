@@ -1,4 +1,4 @@
-body {
+/*body {
     background-color: #f9fafc;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
@@ -31,19 +31,16 @@ footer {
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
 }
 
-/* Navbar spacing */
 .navbar {
     padding-top: 0.6rem;
     padding-bottom: 0.6rem;
 }
 
-/* Buttons */
 .btn {
     border-radius: 6px;
     font-weight: 500;
 }
 
-/* Issue listing */
 .issue-photo {
     max-height: 180px;
     width: 100%;
@@ -51,7 +48,6 @@ footer {
     border-radius: 10px;
 }
 
-/* AI status text */
 .ai-status-success {
     color: #0f7b22;
     font-weight: 600;
@@ -62,12 +58,10 @@ footer {
     font-weight: 600;
 }
 
-/* Spacing adjustments */
 .container {
     max-width: 1140px;
 }
 
-/* Smooth hover transitions for links */
 a {
     transition: 0.2s ease-in-out;
 }
@@ -75,16 +69,160 @@ a:hover {
     opacity: 0.85;
 }
 
-/* Footer polish */
 footer {
     background: #fff;
     border-top: 1px solid #e7e7e7;
     padding: 15px 0;
 }
 
-/* Responsive tweaks */
 @media (max-width: 768px) {
     .card {
         border-radius: 10px;
+    }
+}
+*/
+
+/* -----------------------------------------
+   GLOBAL STYLES
+----------------------------------------- */
+body {
+    background: linear-gradient(135deg, #f9fafc, #eef3ff);
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    color: #333;
+}
+
+/* Better container spacing */
+.container {
+    max-width: 1100px;
+    padding-bottom: 40px;
+}
+
+/* -----------------------------------------
+   NAVBAR
+----------------------------------------- */
+.navbar {
+    background: linear-gradient(90deg, #0d6efd, #4a8dff);
+    padding: 0.7rem 0;
+}
+.navbar-brand {
+    font-size: 1.5rem;
+    font-weight: 600;
+}
+
+/* -----------------------------------------
+   CARD DESIGN
+----------------------------------------- */
+.card {
+    border-radius: 18px;
+    overflow: hidden;
+    border: none;
+    background: #fff;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.08);
+    transition: transform .25s ease, box-shadow .25s ease;
+}
+.card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.12);
+}
+
+/* -----------------------------------------
+   BUTTONS
+----------------------------------------- */
+.btn {
+    border-radius: 8px !important;
+    font-weight: 600;
+    padding: 10px 18px;
+    transition: 0.3s ease;
+}
+
+.btn-primary {
+    background: linear-gradient(90deg, #0d6efd, #4a8dff);
+    border: none;
+}
+.btn-primary:hover {
+    opacity: 0.92;
+}
+
+.btn-success {
+    background: linear-gradient(90deg, #28a745, #5bd85b);
+    border: none;
+}
+
+.btn-outline-primary {
+    border-width: 2px;
+    font-weight: 600;
+}
+
+/* -----------------------------------------
+   ISSUE IMAGES
+----------------------------------------- */
+.issue-photo,
+img.img-fluid {
+    border-radius: 12px;
+    max-height: 180px;
+    object-fit: cover;
+    width: 100%;
+}
+
+/* -----------------------------------------
+   AI STATUS
+----------------------------------------- */
+.ai-status-success {
+    color: #0a8c34;
+    font-weight: 700;
+}
+.ai-status-error {
+    color: #d91232;
+    font-weight: 700;
+}
+
+/* -----------------------------------------
+   LISTS & LINKS
+----------------------------------------- */
+a {
+    transition: .2s ease;
+}
+a:hover {
+    opacity: .85;
+}
+
+/* -----------------------------------------
+   FOOTER
+----------------------------------------- */
+footer {
+    background: #fff;
+    border-top: 1px solid #e3e3e3;
+    padding: 18px 0;
+}
+
+/* -----------------------------------------
+   MOBILE OPTIMIZATION
+----------------------------------------- */
+@media (max-width: 768px) {
+
+    .navbar-brand {
+        font-size: 1.3rem;
+    }
+
+    .card {
+        border-radius: 14px;
+    }
+
+    .btn {
+        padding: 10px 14px;
+        font-size: 0.95rem;
+    }
+
+    h3, h4, h5 {
+        font-size: 1.1rem;
+    }
+
+    .issue-photo {
+        max-height: 150px;
+    }
+
+    .container {
+        padding-left: 14px;
+        padding-right: 14px;
     }
 }

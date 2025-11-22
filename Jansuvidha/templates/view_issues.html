@@ -1,52 +1,107 @@
 {% extends "base.html" %}
 {% block content %}
-<h3 class="mb-3">Reported Issues</h3>
 
-<div class="row g-3">
+<h3 class="fw-bold text-primary mb-4"> Reported Issues</h3>
+
+{% if issues|length == 0 %}
+<div class="alert alert-info text-center">
+  No issues reported yet.
+</div>
+{% endif %}
+
+<div class="row g-4">
   {% for i in issues %}
   <div class="col-md-6 col-lg-4">
-    <div class="card h-100 shadow-sm">
+    <div class="card shadow-sm border-0 rounded-3 h-100">
+
+      <!-- Image -->
+      {% if i.file %}
+      <img src="{{ url_for('static', filename=i.file) }}" 
+           class="card-img-top rounded-top"
+           style="height:180px; object-fit:cover;">
+      {% endif %}
+
       <div class="card-body">
-        <h5 class="card-title">{{ i.issue[:70] }}{% if i.issue|length > 70 %}...{% endif %}</h5>
-        <p class="text-muted small">
-          {{ i.location }} • {{ i.created_at.strftime('%Y-%m-%d %H:%M') }}
+
+        <!-- Issue Text -->
+        <h5 class="card-title fw-semibold">
+          {{ i.issue[:80] }}{% if i.issue|length > 80 %}...{% endif %}
+        </h5>
+
+        <!-- Location + Time -->
+        <p class="text-muted small mb-1">
+           {{ i.location }}  
+          <br>
+           {{ i.created_at.strftime('%Y-%m-%d %H:%M') }}
         </p>
-
-        {% if i.file %}
-        <img src="{{ url_for('static', filename=i.file) }}" class="img-fluid rounded mb-2" />
-        {% endif %}
-
-        <p class="card-text">
-          {{ i.issue[:150] }}{% if i.issue|length > 150 %}...{% endif %}
-        </p>
-      </div>
-
-      <div class="card-footer d-flex justify-content-between align-items-center">
 
         <!-- Status -->
-        <span class="badge bg-secondary">{{ i.status }}</span>
-
-        <div class="d-flex gap-2">
-
-          <!-- Upvote button -->
-          <form action="{{ url_for('upvote_issue', issue_id=i.id) }}" method="POST">
-            <button class="btn btn-sm btn-success" type="submit">
-              👍 {{ i.upvotes }}
-            </button>
-          </form>
-
-          <!-- Photo -->
-          {% if i.file %}
-          <a href="{{ url_for('static', filename=i.file) }}" 
-             class="btn btn-sm btn-outline-primary" target="_blank">
-            View Photo
-          </a>
+        <span class="badge 
+          {% if i.status == 'Resolved' %} bg-success
+          {% elif i.status == 'In Progress' %} bg-warning text-dark
+          {% else %} bg-secondary
           {% endif %}
-        </div>
+        ">
+          {{ i.status }}
+        </span>
 
+        <!-- Short description -->
+        <p class="mt-2 text-secondary small">
+          {{ i.issue[:140] }}{% if i.issue|length > 140 %}...{% endif %}
+        </p>
+
+        <!-- Read More Modal Trigger -->
+        {% if i.issue|length > 140 %}
+        <button class="btn btn-sm btn-link p-0" 
+          data-bs-toggle="modal" data-bs-target="#issueModal{{ i.id }}">
+          Read More →
+        </button>
+        {% endif %}
+
+      </div>
+
+      <div class="card-footer bg-white border-0 d-flex justify-content-between">
+
+        <!-- Upvote -->
+        <form action="{{ url_for('upvote_issue', issue_id=i.id) }}" method="POST">
+          <button class="btn btn-sm btn-outline-success fw-semibold">
+            👍 {{ i.upvotes }}
+          </button>
+        </form>
+
+        <!-- View Photo -->
+        {% if i.file %}
+        <a href="{{ url_for('static', filename=i.file) }}" 
+           class="btn btn-sm btn-outline-primary fw-semibold" 
+           target="_blank">
+           View
+        </a>
+        {% endif %}
+
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Read More Modal -->
+  <div class="modal fade" id="issueModal{{ i.id }}" tabindex="-1">
+    <div class="modal-dialog modal-dialog-scrollable">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Issue Details</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <p>{{ i.issue }}</p>
+          <hr>
+          <p><strong>Location:</strong> {{ i.location }}</p>
+          <p><strong>Reported on:</strong> {{ i.created_at.strftime('%Y-%m-%d %H:%M') }}</p>
+        </div>
       </div>
     </div>
   </div>
+
   {% endfor %}
 </div>
+
 {% endblock %}

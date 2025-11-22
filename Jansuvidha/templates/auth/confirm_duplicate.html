@@ -1,31 +1,76 @@
 {% extends "base.html" %}
 {% block content %}
-<h3>Possible duplicate issues found</h3>
-<p class="text-muted">We found issues similar to your report. Would you like to link your report to any of these, or create a new one?</p>
 
-<div class="list-group mb-3">
-  {% for c in candidates %}
-  <div class="list-group-item">
-    <div class="d-flex justify-content-between align-items-start">
-      <div>
-        <h5 class="mb-1">{{ c.issue[:120] }}{% if c.issue|length > 120 %}...{% endif %}</h5>
-        <small class="text-muted">{{ c.location }} • {{ c.created_at }}</small>
-        <p class="mb-1">Upvotes: {{ c.upvotes }} • similarity: {{ c.similarity }}</p>
+<div class="container mt-4">
+
+  <div class="card shadow border-0">
+    <div class="card-body p-4">
+
+      <h3 class="fw-bold text-primary mb-2">
+        Possible Duplicate Issues Found
+      </h3>
+
+      <p class="text-muted">
+        Our system detected reports similar to your submission.  
+        You can <b>link your report</b> to an existing one or 
+        <b>create a new issue anyway</b>.
+      </p>
+
+      <hr>
+
+      <!-- LIST OF MATCHES -->
+      <div class="list-group">
+        {% for c in candidates %}
+        <div class="list-group-item py-3">
+
+          <div class="d-flex justify-content-between align-items-start">
+
+            <div class="pe-3">
+              <h5 class="mb-1 text-dark fw-semibold">
+                {{ c.issue[:150] }}{% if c.issue|length > 150 %}...{% endif %}
+              </h5>
+
+              <small class="text-muted">
+                 {{ c.location }}  
+                 {{ c.created_at.strftime('%Y-%m-%d %H:%M') }}
+              </small>
+
+              <div class="mt-2">
+                <span class="badge bg-info text-dark">Upvotes: {{ c.upvotes }}</span>
+                <span class="badge bg-warning text-dark">Similarity: {{ c.similarity }}</span>
+              </div>
+            </div>
+
+            <!-- LINK BUTTON -->
+            <form action="{{ url_for('confirm_link') }}" method="post">
+              <input type="hidden" name="link_to" value="{{ c.id }}">
+              <button class="btn btn-outline-primary btn-sm">
+                Link to this
+              </button>
+            </form>
+
+          </div>
+
+        </div>
+        {% endfor %}
       </div>
-      <div>
-        <form action="{{ url_for('confirm_link') }}" method="post">
-          <input type="hidden" name="link_to" value="{{ c.id }}">
-          <button type="submit" class="btn btn-outline-primary btn-sm">Link to this</button>
+
+      <!-- IF USER WANTS TO FORCE CREATE -->
+      <div class="mt-4 d-flex">
+        <form action="{{ url_for('force_create') }}" method="post">
+          <button class="btn btn-danger me-2">
+            Create Anyway — Not a Duplicate
+          </button>
         </form>
+
+        <a href="{{ url_for('report_issue') }}" class="btn btn-secondary">
+          Cancel
+        </a>
       </div>
+
     </div>
   </div>
-  {% endfor %}
+
 </div>
 
-<!-- force create (if none match) -->
-<form action="{{ url_for('force_create') }}" method="post">
-  <button type="submit" class="btn btn-danger">Create anyway — not a duplicate</button>
-  <a href="{{ url_for('report_issue') }}" class="btn btn-secondary ms-2">Cancel</a>
-</form>
 {% endblock %}
