@@ -1,58 +1,85 @@
 {% extends "base.html" %}
 {% block content %}
 
-<div class="row justify-content-center">
-  <div class="col-md-6 col-lg-5">
+<div class="row mt-3">
+  <div class="col-md-4 mb-3">
+    <div class="card shadow-sm border-0 h-100">
+      <div class="card-body">
 
-    <div class="card shadow-sm border-0 rounded-4">
-      <div class="card-body p-4">
+        <h5 class="card-title mb-3">
+          <i class="bi bi-person-circle"></i> Profile
+        </h5>
 
-        <div class="text-center mb-4">
-          <div class="rounded-circle bg-primary text-white d-inline-flex 
-                      justify-content-center align-items-center"
-               style="width:80px; height:80px; font-size:34px;">
-            {{ session.get('user_name','?')[0]|upper }}
-          </div>
-
-          <h3 class="fw-bold mt-3">{{ session.get('user_name') }}</h3>
-          <p class="text-muted">{{ session.get('user_email') }}</p>
-          <span class="badge bg-success">{{ session.get('user_role')|capitalize }}</span>
-        </div>
-
-        <hr>
-
-        <div class="list-group mb-4">
-
-          <a href="{{ url_for('report_issue') }}" class="list-group-item list-group-item-action">
-            Report New Issue
-          </a>
-
-          <a href="{{ url_for('view_issues') }}" class="list-group-item list-group-item-action">
-            View Your Issues
-          </a>
-
-          {% if session.get('user_role') == "admin" %}
-          <a href="{{ url_for('admin_dashboard') }}" class="list-group-item list-group-item-action">
-            Admin Dashboard
-          </a>
-          {% endif %}
-
-          {% if session.get('user_role') == "manager" %}
-          <a href="{{ url_for('manager_dashboard') }}" class="list-group-item list-group-item-action">
-            Manager Dashboard
-          </a>
-          {% endif %}
-
-        </div>
-
-        <a href="{{ url_for('auth.logout') }}" class="btn btn-outline-danger w-100">
-          Logout
-        </a>
+        <p class="mb-1"><strong>Name:</strong> {{ user.name }}</p>
+        <p class="mb-1"><strong>Email:</strong> {{ user.email }}</p>
+        <p class="mb-1"><strong>Role:</strong> {{ user.role or 'citizen' }}</p>
 
       </div>
     </div>
+  </div>
 
+  <div class="col-md-8 mb-3">
+    <div class="card shadow-sm border-0 h-100">
+      <div class="card-body">
+        <h5 class="card-title mb-3">
+          <i class="bi bi-graph-up"></i> Your Issue Stats
+        </h5>
+
+        <div class="row text-center">
+          <div class="col-6 col-md-3 mb-2">
+            <div class="small text-muted">Total</div>
+            <div class="fs-4 fw-bold">{{ total_issues }}</div>
+          </div>
+          <div class="col-6 col-md-3 mb-2">
+            <div class="small text-muted">Pending</div>
+            <div class="fs-4 fw-bold">{{ pending_count }}</div>
+          </div>
+          <div class="col-6 col-md-3 mb-2">
+            <div class="small text-muted">Resolved</div>
+            <div class="fs-4 fw-bold">{{ resolved_count }}</div>
+          </div>
+          <div class="col-6 col-md-3 mb-2">
+            <div class="small text-muted">Linked</div>
+            <div class="fs-4 fw-bold">{{ linked_count }}</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
   </div>
 </div>
+
+<hr class="my-4">
+
+<h5 class="mb-3">Your Reported Issues</h5>
+
+{% if issues %}
+  <div class="list-group">
+    {% for issue in issues %}
+      <div class="list-group-item list-group-item-action mb-2 shadow-sm rounded-3">
+        <div class="d-flex w-100 justify-content-between align-items-center">
+          <div class="me-3">
+            <h6 class="mb-1">{{ issue.issue[:80] }}{% if issue.issue|length > 80 %}...{% endif %}</h6>
+            <small class="text-muted">
+              Location: {{ issue.location }} |
+              Status: {{ issue.status }} |
+              Severity: {{ issue.severity or '-' }}
+            </small>
+          </div>
+          <div class="text-end">
+            <div class="small text-muted">
+              {{ issue.created_at.strftime("%d-%b-%Y %H:%M") if issue.created_at }}
+            </div>
+            <div class="small">
+              ⭐ {{ issue.upvotes }} upvotes
+            </div>
+          </div>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+{% else %}
+  <p class="text-muted">You haven't reported any issues yet.</p>
+{% endif %}
 
 {% endblock %}

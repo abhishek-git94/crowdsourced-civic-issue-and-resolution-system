@@ -226,3 +226,58 @@ footer {
         padding-right: 14px;
     }
 }
+.upvote-btn {
+  border-radius: 999px;
+  padding: 0.4rem 0.9rem;
+  border: 1px solid #ddd;
+  background-color: #ffffff;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.9rem;
+  transition:
+    background-color 0.15s ease,
+    transform 0.12s ease,
+    box-shadow 0.12s ease,
+    color 0.15s ease;
+}
+
+.upvote-btn .upvote-icon {
+  font-size: 1.1rem;
+}
+
+.upvote-btn .upvote-count {
+  font-weight: 600;
+}
+
+.upvote-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.08);
+}
+
+.upvote-btn.upvoted {
+  background-color: #ffeaa7;
+  border-color: #fdcb6e;
+  color: #2d3436;
+}
+
+.upvote-btn.upvoted .upvote-icon {
+  transform: scale(1.05);
+}
+
+/* Tiny pulse animation on change */
+@keyframes upvote-pop {
+  0% {
+    transform: scale(1);
+  }
+  40% {
+    transform: scale(1.15);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.upvote-btn.pop {
+  animation: upvote-pop 0.18s ease-out;
+}

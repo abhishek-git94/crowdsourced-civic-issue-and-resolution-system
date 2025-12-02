@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>{{ title or "Civic Issue Tracker" }}</title>
+  <title>{{ title or "JanSuvidha" }}</title>
 
   <!-- Bootstrap -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -44,46 +44,66 @@
           </a>
         </li>
 
-        <!-- If logged in -->
-        {% if session.get('user_id') %}
+        <!-- Logged In -->
+        {% if current_user.is_authenticated %}
 
-        <!-- ROLE MENUS -->
-        {% if session.get('user_role') == 'admin' %}
-        <li class="nav-item mx-1"><a class="nav-link" href="{{ url_for('admin_dashboard') }}">
-          <i class="bi bi-shield-lock-fill"></i> Admin
-        </a></li>
-        {% elif session.get('user_role') == 'manager' %}
-        <li class="nav-item mx-1"><a class="nav-link" href="{{ url_for('manager_dashboard') }}">
-          <i class="bi bi-briefcase-fill"></i> Manager
-        </a></li>
-        {% endif %}
+          <!-- MAP VIEW -->
+          <li class="nav-item mx-1">
+            <a class="nav-link" href="{{ url_for('issue_map') }}">
+              <i class="bi bi-map"></i> Map
+            </a>
+          </li>
 
-        <!-- PROFILE DROPDOWN -->
-        <li class="nav-item dropdown mx-1">
-          <a class="nav-link dropdown-toggle fw-semibold" href="#" role="button" data-bs-toggle="dropdown">
-            <i class="bi bi-person-circle"></i> {{ session.get('user_name') }}
-          </a>
-          <ul class="dropdown-menu dropdown-menu-end">
-            <li><a class="dropdown-item" href="{{ url_for('auth.profile') }}"><i class="bi bi-person"></i> Profile</a></li>
-            <li><hr class="dropdown-divider"></li>
-            <li><a class="dropdown-item text-danger" href="{{ url_for('auth.logout') }}"><i class="bi bi-box-arrow-right"></i> Logout</a></li>
-          </ul>
-        </li>
+          <!-- Role Menus -->
+          {% if current_user.role == 'admin' %}
+          <li class="nav-item mx-1">
+            <a class="nav-link" href="{{ url_for('admin_dashboard') }}">
+              <i class="bi bi-shield-lock-fill"></i> Admin
+            </a>
+          </li>
+          {% elif current_user.role == 'manager' %}
+          <li class="nav-item mx-1">
+            <a class="nav-link" href="{{ url_for('manager_dashboard') }}">
+              <i class="bi bi-briefcase-fill"></i> Manager
+            </a>
+          </li>
+          {% endif %}
 
-        <!-- If NOT logged in -->
+          <!-- PROFILE DROPDOWN -->
+          <li class="nav-item dropdown mx-1">
+            <a class="nav-link dropdown-toggle fw-semibold" href="#" role="button" data-bs-toggle="dropdown">
+              <i class="bi bi-person-circle"></i> {{ current_user.name }}
+            </a>
+            <ul class="dropdown-menu dropdown-menu-end">
+              <li>
+                <a class="dropdown-item" href="{{ url_for('auth.profile') }}">
+                  <i class="bi bi-person"></i> Profile
+                </a>
+              </li>
+              <li><hr class="dropdown-divider"></li>
+              <li>
+                <a class="dropdown-item text-danger" href="{{ url_for('auth.logout') }}">
+                  <i class="bi bi-box-arrow-right"></i> Logout
+                </a>
+              </li>
+            </ul>
+          </li>
+
+        <!-- Logged Out -->
         {% else %}
-        <li class="nav-item mx-1">
-          <a class="nav-link" href="{{ url_for('auth.login') }}">
-            <i class="bi bi-box-arrow-in-right"></i> Login
-          </a>
-        </li>
+          <li class="nav-item mx-1">
+            <a class="nav-link" href="{{ url_for('auth.login') }}">
+              <i class="bi bi-box-arrow-in-right"></i> Login
+            </a>
+          </li>
 
-        <li class="nav-item mx-1">
-          <a class="nav-link" href="{{ url_for('auth.register') }}">
-            <i class="bi bi-person-plus-fill"></i> Register
-          </a>
-        </li>
+          <li class="nav-item mx-1">
+            <a class="nav-link" href="{{ url_for('auth.register') }}">
+              <i class="bi bi-person-plus-fill"></i> Register
+            </a>
+          </li>
         {% endif %}
+
       </ul>
     </div>
   </div>
@@ -96,7 +116,8 @@
   {% with messages = get_flashed_messages(with_categories=true) %}
     {% if messages %}
       {% for category, message in messages %}
-        <div class="alert alert-{{ 'danger' if category=='error' else category }} alert-dismissible fade show shadow-sm">
+        <div class="alert alert-{{ 'danger' if category=='error' else category }} 
+                    alert-dismissible fade show shadow-sm">
           <i class="bi bi-info-circle-fill me-1"></i> {{ message }}
           <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
@@ -120,7 +141,7 @@
 </footer>
 
 
-<!-- Scripts -->
+<!-- JS -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script src="{{ url_for('static', filename='js/main.js') }}"></script>
 

@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h2 class="fw-bold mb-3"><i class="bi bi-map"></i> Issues Map</h2>
+
+<div id="map" style="height: 550px; border-radius: 10px;"></div>
+
+<!-- Leaflet CSS -->
+<link rel="stylesheet" 
+  href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" />
+
+<!-- Leaflet JS -->
+<script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
+
+<!-- Marker Cluster -->
+<link rel="stylesheet"
+  href="https://unpkg.com/leaflet.markercluster/dist/MarkerCluster.css" />
+<link rel="stylesheet" 
+  href="https://unpkg.com/leaflet.markercluster/dist/MarkerCluster.Default.css" />
+<script src="https://unpkg.com/leaflet.markercluster/dist/leaflet.markercluster.js"></script>
+
+<script>
+// Issue data from Flask
+const issues = {{ issues | tojson }};
+
+// Initialize the map
+const map = L.map('map').setView([20.5937, 78.9629], 5); // India Center
+
+// Add OpenStreetMap tiles
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  maxZoom: 19,
+}).addTo(map);
+
+// Marker cluster group
+const markers = L.markerClusterGroup();
+
+// Add markers for each issue
+issues.forEach(issue => {
+  
+  // Use Nominatim geocoder
+  fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${issue.location}`)
+    .then(res => res.json())
+    .then(data => {
+      if (data.length > 0) {
+        const lat = data[0].lat;
+        const lon = data[0].lon;
+
+        const popup = `
+          <b>${issue.title}</b><br>
+          <span class='text-muted'>${issue.location}</span><br>
+          <b>Status:</b> ${issue.status}<br>
+          <b>Upvotes:</b> ${issue.upvotes}<br>
+          <b>Category:</b> ${issue.category || 'N/A'}<br>
+          <a href="/view#issue-${issue.id}" class="btn btn-primary btn-sm mt-2">View Issue</a>
+        `;
+
+        const marker = L.marker([lat, lon]).bindPopup(popup);
+        markers.addLayer(marker);
+      }
+    });
+});
+
+// Add cluster to map
+map.addLayer(markers);
+
+</script>
+
+{% endblock %}

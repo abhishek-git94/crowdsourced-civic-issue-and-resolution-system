@@ -1,107 +1,228 @@
 {% extends "base.html" %}
 {% block content %}
 
-<h3 class="fw-bold text-primary mb-4"> Reported Issues</h3>
+<div class="container mt-4">
+    <h2 class="mb-4">All Reported Issues</h2>
 
-{% if issues|length == 0 %}
-<div class="alert alert-info text-center">
-  No issues reported yet.
+    {% if issues %}
+        {% for issue in issues %}
+        <div class="card mb-3 issue-card shadow-sm">
+            <div class="card-body d-flex justify-content-between align-items-center">
+
+                <!-- LEFT SIDE: Issue Info -->
+                <div class="flex-grow-1 pe-3">
+                    <h5 class="card-title">{{ issue.issue }}</h5>
+                    <p class="card-text text-muted mb-1">
+                        <strong>Location:</strong> {{ issue.location }}
+                    </p>
+
+                    <small class="text-secondary">
+                        Status: <span class="text-dark">{{ issue.status }}</span> • 
+                        Upvotes: <span class="upvote-count-text">{{ issue.upvotes }}</span>
+                    </small>
+                </div>
+
+                <!-- RIGHT SIDE: Upvote Button -->
+                <button 
+                    type="button"
+                    class="btn upvote-btn {% if issue.has_upvoted %}upvoted{% endif %}"
+                    data-issue-id="{{ issue.id }}"
+                    data-upvoted="{% if issue.has_upvoted %}1{% else %}0{% endif %}"
+                >
+                    <span class="upvote-icon">⭐</span>
+                    <span class="upvote-label">
+                        {% if issue.has_upvoted %} Upvoted {% else %} Upvote {% endif %}
+                    </span>
+                    <span class="upvote-count">{{ issue.upvotes }}</span>
+                </button>
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <p class="text-muted">No issues reported yet.</p>
+    {% endif %}
 </div>
-{% endif %}
 
-<div class="row g-4">
-  {% for i in issues %}
-  <div class="col-md-6 col-lg-4">
-    <div class="card shadow-sm border-0 rounded-3 h-100">
 
-      <!-- Image -->
-      {% if i.file %}
-      <img src="{{ url_for('static', filename=i.file) }}" 
-           class="card-img-top rounded-top"
-           style="height:180px; object-fit:cover;">
-      {% endif %}
 
-      <div class="card-body">
+<!-- ######################################################## -->
+<!-- POPUP MODAL (When Right-click on Upvote Button)          -->
+<!-- ######################################################## -->
 
-        <!-- Issue Text -->
-        <h5 class="card-title fw-semibold">
-          {{ i.issue[:80] }}{% if i.issue|length > 80 %}...{% endif %}
-        </h5>
+<div class="modal fade" id="upvoteUsersModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable">
+    <div class="modal-content">
 
-        <!-- Location + Time -->
-        <p class="text-muted small mb-1">
-           {{ i.location }}  
-          <br>
-           {{ i.created_at.strftime('%Y-%m-%d %H:%M') }}
-        </p>
-
-        <!-- Status -->
-        <span class="badge 
-          {% if i.status == 'Resolved' %} bg-success
-          {% elif i.status == 'In Progress' %} bg-warning text-dark
-          {% else %} bg-secondary
-          {% endif %}
-        ">
-          {{ i.status }}
-        </span>
-
-        <!-- Short description -->
-        <p class="mt-2 text-secondary small">
-          {{ i.issue[:140] }}{% if i.issue|length > 140 %}...{% endif %}
-        </p>
-
-        <!-- Read More Modal Trigger -->
-        {% if i.issue|length > 140 %}
-        <button class="btn btn-sm btn-link p-0" 
-          data-bs-toggle="modal" data-bs-target="#issueModal{{ i.id }}">
-          Read More →
-        </button>
-        {% endif %}
-
+      <div class="modal-header">
+        <h5 class="modal-title">Users who upvoted</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
 
-      <div class="card-footer bg-white border-0 d-flex justify-content-between">
-
-        <!-- Upvote -->
-        <form action="{{ url_for('upvote_issue', issue_id=i.id) }}" method="POST">
-          <button class="btn btn-sm btn-outline-success fw-semibold">
-            👍 {{ i.upvotes }}
-          </button>
-        </form>
-
-        <!-- View Photo -->
-        {% if i.file %}
-        <a href="{{ url_for('static', filename=i.file) }}" 
-           class="btn btn-sm btn-outline-primary fw-semibold" 
-           target="_blank">
-           View
-        </a>
-        {% endif %}
-
+      <div class="modal-body">
+        <ul id="upvote-users-list" class="list-group small"></ul>
       </div>
 
     </div>
   </div>
-
-  <!-- Read More Modal -->
-  <div class="modal fade" id="issueModal{{ i.id }}" tabindex="-1">
-    <div class="modal-dialog modal-dialog-scrollable">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title">Issue Details</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-        </div>
-        <div class="modal-body">
-          <p>{{ i.issue }}</p>
-          <hr>
-          <p><strong>Location:</strong> {{ i.location }}</p>
-          <p><strong>Reported on:</strong> {{ i.created_at.strftime('%Y-%m-%d %H:%M') }}</p>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  {% endfor %}
 </div>
+
+
+
+<!-- ######################################################## -->
+<!-- CSS: Highlight + Animations                               -->
+<!-- ######################################################## -->
+
+<style>
+.upvote-btn {
+  border-radius: 999px;
+  padding: 0.4rem 0.9rem;
+  border: 1px solid #ddd;
+  background-color: #ffffff;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.9rem;
+  transition:
+    background-color 0.15s ease,
+    transform 0.12s ease,
+    box-shadow 0.12s ease,
+    color 0.15s ease;
+}
+
+.upvote-btn .upvote-icon {
+  font-size: 1.2rem;
+}
+
+.upvote-btn .upvote-count {
+  font-weight: 600;
+}
+
+.upvote-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.08);
+}
+
+.upvote-btn.upvoted {
+  background-color: #ffeaa7;
+  border-color: #fdcb6e;
+  color: #2d3436;
+}
+
+.upvote-btn.upvoted .upvote-icon {
+  transform: scale(1.05);
+}
+
+/* pop animation */
+@keyframes upvote-pop {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.18); }
+  100% { transform: scale(1); }
+}
+
+.upvote-btn.pop {
+  animation: upvote-pop 0.18s ease-out;
+}
+</style>
+
+
+
+<!-- ######################################################## -->
+<!-- JAVASCRIPT: Upvote (AJAX) + Right-click Popup             -->
+<!-- ######################################################## -->
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  const buttons = document.querySelectorAll(".upvote-btn");
+  const modalElement = document.getElementById("upvoteUsersModal");
+  const usersListElement = document.getElementById("upvote-users-list");
+
+  let upvoteUsersModal = null;
+  if (modalElement && window.bootstrap) {
+    upvoteUsersModal = new bootstrap.Modal(modalElement);
+  }
+
+  buttons.forEach((btn) => {
+    const issueId = btn.dataset.issueId;
+
+    // LEFT CLICK -> AJAX toggle upvote
+    btn.addEventListener("click", function () {
+      fetch(`/issue/${issueId}/upvote`, {
+        method: "POST",
+        headers: {
+          "X-Requested-With": "XMLHttpRequest",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({})
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          if (!data.success) {
+            alert(data.error || "Something went wrong.");
+            return;
+          }
+
+          // Update the count
+          btn.querySelector(".upvote-count").textContent = data.upvotes;
+
+          // Update button appearance
+          if (data.upvoted) {
+            btn.classList.add("upvoted");
+            btn.dataset.upvoted = "1";
+            btn.querySelector(".upvote-label").textContent = " Upvoted ";
+          } else {
+            btn.classList.remove("upvoted");
+            btn.dataset.upvoted = "0";
+            btn.querySelector(".upvote-label").textContent = " Upvote ";
+          }
+
+          // Trigger animation
+          btn.classList.remove("pop");
+          void btn.offsetWidth; // force reflow
+          btn.classList.add("pop");
+        })
+        .catch((err) => {
+          console.error(err);
+          alert("Could not update upvote.");
+        });
+    });
+
+    // RIGHT CLICK -> Show list of voters (popup modal)
+    btn.addEventListener("contextmenu", function (e) {
+      e.preventDefault();
+
+      if (!upvoteUsersModal) {
+        alert("Popup not available.");
+        return;
+      }
+
+      fetch(`/issue/${issueId}/upvote/list`)
+        .then((res) => res.json())
+        .then((data) => {
+          usersListElement.innerHTML = "";
+
+          if (data.users.length === 0) {
+            let li = document.createElement("li");
+            li.className = "list-group-item";
+            li.textContent = "No users have upvoted this issue yet.";
+            usersListElement.appendChild(li);
+          } else {
+            data.users.forEach((name) => {
+              let li = document.createElement("li");
+              li.className = "list-group-item";
+              li.textContent = name;
+              usersListElement.appendChild(li);
+            });
+          }
+
+          upvoteUsersModal.show();
+        })
+        .catch((err) => {
+          console.error(err);
+          alert("Could not load voter list.");
+        });
+    });
+  });
+});
+</script>
 
 {% endblock %}

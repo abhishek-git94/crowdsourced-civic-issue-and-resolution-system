@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="container mt-4">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h2>Manage Issues</h2>
+    <a href="{{ url_for('admin_dashboard') }}" class="btn btn-outline-secondary btn-sm">
+      ← Back to Dashboard
+    </a>
+  </div>
+
+  <!-- Filter by Status -->
+  <form method="get" class="mb-3">
+    <div class="row g-2 align-items-end">
+      <div class="col-auto">
+        <label class="form-label">Status</label>
+        <select name="status" class="form-select">
+          <option value="all" {% if selected_status == 'all' %}selected{% endif %}>All</option>
+          <option value="Pending" {% if selected_status == 'Pending' %}selected{% endif %}>Pending</option>
+          <option value="Resolved" {% if selected_status == 'Resolved' %}selected{% endif %}>Resolved</option>
+          <option value="Linked" {% if selected_status == 'Linked' %}selected{% endif %}>Duplicate/Linked</option>
+        </select>
+      </div>
+      <div class="col-auto">
+        <button type="submit" class="btn btn-primary mt-4">Apply Filter</button>
+      </div>
+    </div>
+  </form>
+
+  {% if issues %}
+    <div class="table-responsive">
+      <table class="table table-sm align-middle table-striped">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Issue</th>
+            <th>Location</th>
+            <th>Status</th>
+            <th>Severity</th>
+            <th>Upvotes</th>
+            <th>Assigned To</th>
+            <th>Created</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+        {% for issue in issues %}
+          <tr>
+            <td>#{{ issue.id }}</td>
+            <td style="max-width: 220px;">
+              {{ issue.issue[:60] }}{% if issue.issue|length > 60 %}...{% endif %}
+            </td>
+            <td>{{ issue.location }}</td>
+            <td>{{ issue.status }}</td>
+            <td>{{ issue.severity or '-' }}</td>
+            <td>{{ issue.upvotes }}</td>
+            <td>{{ issue.assigned_to or 'Unassigned' }}</td>
+            <td>{{ issue.created_at.strftime("%d-%b %Y") if issue.created_at }}</td>
+            <td>
+              <!-- Assign form -->
+              <form method="post"
+                    action="{{ url_for('assign_issue', issue_id=issue.id) }}"
+                    class="d-flex gap-1 align-items-center">
+
+                <input type="hidden" name="status_filter" value="{{ selected_status }}">
+
+                <select name="assigned_to" class="form-select form-select-sm">
+                  <option value="none" {% if not issue.assigned_to %}selected{% endif %}>
+                    Unassigned
+                  </option>
+                  {% for worker in workers %}
+                    <option value="{{ worker.name }}"
+                      {% if issue.assigned_to == worker.name %}selected{% endif %}>
+                      {{ worker.name }}
+                    </option>
+                  {% endfor %}
+                </select>
+
+                <button type="submit" class="btn btn-sm btn-outline-primary">
+                  Save
+                </button>
+
+                <a href="{{ url_for('issue_pdf', issue_id=issue.id) }}"
+                   class="btn btn-sm btn-outline-secondary">
+                  PDF
+                </a>
+              </form>
+            </td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <p class="text-muted">No issues found for this filter.</p>
+  {% endif %}
+</div>
+
+{% endblock %}
