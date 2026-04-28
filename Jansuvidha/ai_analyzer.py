@@ -3,14 +3,6 @@ from ultralytics import YOLO
 import chromadb
 from datetime import datetime
 import os
-from utils.duplicate_detector import (
-    get_local_embedding,
-    get_openai_embedding,
-    cosine_similarity,
-    embed_to_json,
-    json_to_embed
-)
-
 
 class CivicAIAnalyzer:
     def __init__(self, text_model="phi", yolo_model="yolov8n.pt"):
@@ -20,12 +12,7 @@ class CivicAIAnalyzer:
         print(f"🚀 Civic AI Analyzer initialized with Ollama model: {text_model}")
         
         # Load YOLO
-        model_path = os.path.join(os.path.dirname(__file__), "last.pt")
-        print("🔥 Loading YOLO model from:", model_path)
-
-        self.yolo = YOLO(model_path)
-
-
+        self.yolo = YOLO(self.yolo_model)
         
         # Initialize RAG (ChromaDB)
         try:

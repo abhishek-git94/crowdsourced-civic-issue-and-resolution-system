@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h3 class="fw-bold text-primary mb-4">Manager Dashboard</h3>
+<p class="text-muted mb-3">Issues assigned to you:</p>
+
+{% if assigned|length == 0 %}
+<div class="alert alert-info text-center">
+  No issues assigned yet.
+</div>
+{% endif %}
+
+<div class="row g-3">
+
+  {% for it in assigned %}
+  <div class="col-md-6 col-lg-4">
+    <div class="card h-100 shadow-sm border-0">
+
+      <div class="card-body">
+
+        <!-- Issue Title -->
+        <h5 class="card-title fw-semibold">
+          {{ it.issue[:80] }}{% if it.issue|length > 80 %}...{% endif %}
+        </h5>
+
+        <!-- Location & Time -->
+        <p class="small text-muted">
+           {{ it.location }}<br>
+           {{ it.created_at.strftime('%Y-%m-%d %H:%M') }}
+        </p>
+
+        <!-- Status Badge -->
+        <p>
+          <span class="badge 
+            {% if it.status == 'Resolved' %} bg-success
+            {% elif it.status == 'In Progress' %} bg-warning text-dark
+            {% else %} bg-secondary
+            {% endif %}
+          ">
+            {{ it.status }}
+          </span>
+        </p>
+
+      </div>
+
+      <div class="card-footer bg-light d-flex justify-content-between align-items-center">
+
+        <form method="post" action="{{ url_for('admin.manager_update', issue_id=it.id) }}"
+              class="d-flex gap-2 align-items-center w-100">
+
+          <select name="status" class="form-select form-select-sm w-50">
+            <option value="Pending"     {% if it.status=='Pending' %}selected{% endif %}>Pending</option>
+            <option value="In Progress" {% if it.status=='In Progress' %}selected{% endif %}>In Progress</option>
+            <option value="Resolved"    {% if it.status=='Resolved' %}selected{% endif %}>Resolved</option>
+          </select>
+
+          <button class="btn btn-sm btn-primary w-50">
+            Update
+          </button>
+        </form>
+
+      </div>
+
+    </div>
+  </div>
+  {% endfor %}
+
+</div>
+
+{% endblock %}

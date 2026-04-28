@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-9">
+        <nav aria-label="breadcrumb" class="mb-3">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{{ url_for('forum.index') }}">Forum</a></li>
+                <li class="breadcrumb-item active text-truncate" style="max-width: 300px;">{{ post.title }}</li>
+            </ol>
+        </nav>
+
+        <!-- Main Post -->
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-body p-4">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <h2 class="card-title fw-bold">{{ post.title }}</h2>
+                </div>
+                <div class="d-flex align-items-center mb-4 text-muted small">
+                    <i class="bi bi-person-circle fs-4 me-2"></i>
+                    <div>
+                        <span class="fw-bold text-dark">{{ post.user.name }}</span><br>
+                        {{ post.created_at.strftime('%B %d, %Y at %H:%M') }}
+                    </div>
+                </div>
+                <div class="card-text fs-5" style="white-space: pre-wrap;">{{ post.content }}</div>
+            </div>
+        </div>
+
+        <!-- Comments Section -->
+        <h4 class="mb-3">Comments ({{ post.comments|length }})</h4>
+        
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-body p-4">
+                <form action="{{ url_for('forum.add_comment', post_id=post.id) }}" method="POST">
+                    <div class="mb-3">
+                        <textarea class="form-control" name="content" rows="3" placeholder="Write a comment..." required></textarea>
+                    </div>
+                    <div class="text-end">
+                        <button type="submit" class="btn btn-outline-primary">Post Comment</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="comments-list">
+            {% for comment in post.comments|sort(attribute='created_at', reverse=True) %}
+            <div class="card shadow-sm border-0 mb-3 bg-light bg-opacity-50">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="fw-bold">{{ comment.user.name }}</span>
+                        <span class="text-muted small">{{ comment.created_at.strftime('%b %d, %Y %H:%M') }}</span>
+                    </div>
+                    <p class="mb-0">{{ comment.content }}</p>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

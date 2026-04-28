@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="row justify-content-center mt-4">
+  <div class="col-lg-8 col-md-10">
+    <div class="card shadow border-0 rounded-3">
+      <div class="card-body p-4">
+
+        <h3 class="fw-bold text-primary mb-3"> Report an Issue</h3>
+        <p class="text-muted mb-4">
+          Help your city by reporting civic issues like potholes, garbage, broken streetlights, and more.
+        </p>
+
+        <form id="reportForm" method="POST" enctype="multipart/form-data">
+
+          <!-- NAME -->
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Your Name</label>
+            <input name="name" id="name" class="form-control form-control-lg"
+                   value="{{ session.get('user_name') }}" required>
+          </div>
+
+          <!-- LOCATION -->
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Location</label>
+            <input name="location" id="location" class="form-control form-control-lg"
+                   required placeholder="Example: MG Road, Indore">
+          </div>
+
+          <!-- IMAGE UPLOAD -->
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Attach Image (Optional)</label>
+            <input type="file" id="attachment" name="attachment" accept="image/*"
+                   class="form-control form-control-lg">
+          </div>
+
+          <!-- AI Section -->
+          <div id="aiArea" class="mt-3" style="display:none;">
+            <button type="button" id="analyzeBtn" class="btn btn-outline-primary w-100 py-2 fw-semibold">
+               Analyze Image with AI
+            </button>
+            <div id="aiStatus" class="mt-3 p-2"></div>
+          </div>
+
+          <!-- DESCRIPTION -->
+          <div class="mb-3 mt-4">
+            <label class="form-label fw-semibold">Issue Description</label>
+            <textarea id="issue" name="issue" class="form-control form-control-lg"
+                      rows="5" required placeholder="Describe the problem clearly..."></textarea>
+          </div>
+
+          <!-- SUBMIT -->
+          <button type="submit" class="btn btn-success py-2 w-100 fw-bold">
+             Submit Issue
+          </button>
+
+        </form>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<script>
+const fileInput = document.getElementById("attachment");
+const aiArea = document.getElementById("aiArea");
+const analyzeBtn = document.getElementById("analyzeBtn");
+const aiStatus = document.getElementById("aiStatus");
+const issueTextarea = document.getElementById("issue");
+
+// Show AI analyze section if image selected
+fileInput.addEventListener("change", () => {
+  aiArea.style.display = fileInput.files.length ? "block" : "none";
+});
+
+// AI Analyze Button
+if (analyzeBtn) {
+  analyzeBtn.addEventListener("click", async function () {
+    if (!fileInput.files.length) return;
+
+    analyzeBtn.disabled = true;
+    analyzeBtn.innerText = "Analyzing...";
+
+    const form = new FormData();
+    form.append("image", fileInput.files[0]);
+    form.append("location", document.getElementById("location").value);
+
+    try {
+      const response = await fetch("/analyze-image", { method: "POST", body: form });
+      const data = await response.json();
+
+      if (data.description) {
+        issueTextarea.value = data.description;
+
+        aiStatus.innerHTML = `
+          <div class="alert alert-success">
+            <strong>AI Analysis Complete</strong> <br>
+             Category: <b>${data.category}</b><br>
+             Severity: <b>${data.severity}</b><br>
+             Confidence: <b>${Math.round(data.confidence)}%</b>
+          </div>
+        `;
+      } else {
+        aiStatus.innerHTML = `<div class="alert alert-danger">${data.error}</div>`;
+      }
+
+      analyzeBtn.innerText = "Done";
+
+    } catch (e) {
+      aiStatus.innerHTML = `<div class="alert alert-danger">Server error: ${e.message}</div>`;
+      analyzeBtn.disabled = false;
+      analyzeBtn.innerText = "Analyze Again";
+    }
+  });
+}
+</script>
+
+{% endblock %}
