@@ -15,3 +15,7 @@ xhtml2pdf>=0.2.9
 scikit-learn
 pandas
 numpy
+tensorflow
+firebase-admin
+Authlib
+cryptography

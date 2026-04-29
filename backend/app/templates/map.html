@@ -36,28 +36,32 @@ const markers = L.markerClusterGroup();
 
 // Add markers for each issue
 issues.forEach(issue => {
-  
-  // Use Nominatim geocoder
-  fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${issue.location}`)
-    .then(res => res.json())
-    .then(data => {
-      if (data.length > 0) {
-        const lat = data[0].lat;
-        const lon = data[0].lon;
+  const popup = `
+    <b>${issue.title || issue.issue || 'Issue'}</b><br>
+    <span class='text-muted'>${issue.location}</span><br>
+    <b>Status:</b> ${issue.status}<br>
+    <b>Upvotes:</b> ${issue.upvotes || 0}<br>
+    <b>Category:</b> ${issue.category || 'N/A'}<br>
+    <a href="/view" class="btn btn-primary btn-sm mt-2">View Issues</a>
+  `;
 
-        const popup = `
-          <b>${issue.title}</b><br>
-          <span class='text-muted'>${issue.location}</span><br>
-          <b>Status:</b> ${issue.status}<br>
-          <b>Upvotes:</b> ${issue.upvotes}<br>
-          <b>Category:</b> ${issue.category || 'N/A'}<br>
-          <a href="/view#issue-${issue.id}" class="btn btn-primary btn-sm mt-2">View Issue</a>
-        `;
-
-        const marker = L.marker([lat, lon]).bindPopup(popup);
-        markers.addLayer(marker);
-      }
-    });
+  if (issue.latitude && issue.longitude) {
+    const marker = L.marker([issue.latitude, issue.longitude]).bindPopup(popup);
+    markers.addLayer(marker);
+  } else {
+    // Fallback Use Nominatim geocoder
+    fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${issue.location}`)
+      .then(res => res.json())
+      .then(data => {
+        if (data.length > 0) {
+          const lat = data[0].lat;
+          const lon = data[0].lon;
+          const marker = L.marker([lat, lon]).bindPopup(popup);
+          markers.addLayer(marker);
+        }
+      })
+      .catch(err => console.error("Geocoding failed for", issue.location));
+  }
 });
 
 // Add cluster to map

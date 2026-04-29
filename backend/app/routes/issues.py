@@ -79,6 +79,13 @@ def report_issue():
     if request.method == "POST":
         name = current_user.name
         location = request.form.get("location", "")
+        
+        # Geolocation
+        lat_str = request.form.get("latitude", "")
+        lng_str = request.form.get("longitude", "")
+        latitude = float(lat_str) if lat_str else None
+        longitude = float(lng_str) if lng_str else None
+
         file = request.files.get("attachment")
         analysis = None
         file_path = None
@@ -129,18 +136,37 @@ def report_issue():
         if similar:
             session["_pending_issue"] = {
                 "name": name, "issue": issue_text, "location": location,
+                "latitude": latitude, "longitude": longitude,
                 "file_path": file_path, "analysis": analysis,
                 "embedding": embed_to_json(embedding) if embedding else None
             }
             return render_template("confirm_duplicate.html", candidates=similar, pending=session["_pending_issue"])
 
+        # Auto-Routing Logic
+        def get_department(category):
+            dept_map = {
+                'pothole': 'Public Works Department (PWD)',
+                'road_damage': 'Public Works Department (PWD)',
+                'garbage': 'Sanitation Department',
+                'traffic': 'Traffic Police',
+                'street_furniture': 'Municipal Corporation',
+                'general_infrastructure': 'Municipal Corporation'
+            }
+            return dept_map.get(category, 'Municipal Corporation')
+
+        category = analysis.get("category") if isinstance(analysis, dict) else None
+        assigned_dept = get_department(category) if category else 'Municipal Corporation'
+
         try:
             new_issue = Issue(
-                name=name, issue=issue_text, location=location, file=file_path, status="Pending",
-                category=(analysis.get("category") if isinstance(analysis, dict) else None),
+                name=name, issue=issue_text, location=location, 
+                latitude=latitude, longitude=longitude,
+                file=file_path, status="Pending",
+                category=category,
                 confidence=(analysis.get("confidence") if isinstance(analysis, dict) else None),
                 severity=(analysis.get("severity") if isinstance(analysis, dict) else None),
                 embedding=(embed_to_json(embedding) if embedding else None),
+                assigned_to=assigned_dept,
                 user=current_user.id
             )
             new_issue.save()
@@ -171,6 +197,7 @@ def confirm_link():
     try:
         new_issue = Issue(
             name=pending["name"], issue=pending["issue"], location=pending["location"],
+            latitude=pending.get("latitude"), longitude=pending.get("longitude"),
             file=pending["file_path"], status="Linked", is_duplicate_of=link_to,
             embedding=pending.get("embedding"), user=current_user.id
         )
@@ -193,6 +220,7 @@ def force_create():
     try:
         new_issue = Issue(
             name=pending["name"], issue=pending["issue"], location=pending["location"],
+            latitude=pending.get("latitude"), longitude=pending.get("longitude"),
             file=pending["file_path"], status="Pending",
             embedding=pending.get("embedding"), user=current_user.id
         )

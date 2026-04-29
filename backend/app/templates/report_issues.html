@@ -23,8 +23,15 @@
           <!-- LOCATION -->
           <div class="mb-3">
             <label class="form-label fw-semibold">Location</label>
-            <input name="location" id="location" class="form-control form-control-lg"
-                   required placeholder="Example: MG Road, Indore">
+            <div class="input-group">
+              <input name="location" id="location" class="form-control form-control-lg"
+                     required placeholder="Example: MG Road, Indore">
+              <button class="btn btn-outline-secondary" type="button" id="getLocationBtn" title="Get Current Location">
+                <i class="bi bi-geo-alt-fill"></i>
+              </button>
+            </div>
+            <input type="hidden" name="latitude" id="latitude">
+            <input type="hidden" name="longitude" id="longitude">
           </div>
 
           <!-- IMAGE UPLOAD -->
@@ -45,8 +52,13 @@
           <!-- DESCRIPTION -->
           <div class="mb-3 mt-4">
             <label class="form-label fw-semibold">Issue Description</label>
-            <textarea id="issue" name="issue" class="form-control form-control-lg"
-                      rows="5" required placeholder="Describe the problem clearly..."></textarea>
+            <div class="input-group">
+              <textarea id="issue" name="issue" class="form-control form-control-lg"
+                        rows="5" required placeholder="Describe the problem clearly..."></textarea>
+              <button class="btn btn-outline-danger" type="button" id="voiceBtn" title="Voice Input">
+                <i class="bi bi-mic-fill"></i>
+              </button>
+            </div>
           </div>
 
           <!-- SUBMIT -->
@@ -113,6 +125,63 @@ if (analyzeBtn) {
       analyzeBtn.innerText = "Analyze Again";
     }
   });
+}
+
+// Geolocation
+const getLocationBtn = document.getElementById("getLocationBtn");
+if (getLocationBtn) {
+  getLocationBtn.addEventListener("click", () => {
+    if (navigator.geolocation) {
+      getLocationBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>';
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          document.getElementById("latitude").value = position.coords.latitude;
+          document.getElementById("longitude").value = position.coords.longitude;
+          document.getElementById("location").value = `Lat: ${position.coords.latitude.toFixed(4)}, Lng: ${position.coords.longitude.toFixed(4)}`;
+          getLocationBtn.innerHTML = '<i class="bi bi-geo-alt-fill"></i>';
+        },
+        (error) => {
+          alert("Error getting location: " + error.message);
+          getLocationBtn.innerHTML = '<i class="bi bi-geo-alt-fill"></i>';
+        }
+      );
+    } else {
+      alert("Geolocation is not supported by this browser.");
+    }
+  });
+}
+
+// Voice Input (Web Speech API)
+const voiceBtn = document.getElementById("voiceBtn");
+if (voiceBtn) {
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (SpeechRecognition) {
+    const recognition = new SpeechRecognition();
+    recognition.continuous = false;
+    recognition.lang = 'en-US';
+    
+    recognition.onstart = function() {
+      voiceBtn.classList.remove("btn-outline-danger");
+      voiceBtn.classList.add("btn-danger");
+    };
+    
+    recognition.onresult = function(event) {
+      const current = event.resultIndex;
+      const transcript = event.results[current][0].transcript;
+      issueTextarea.value += (issueTextarea.value ? " " : "") + transcript;
+    };
+    
+    recognition.onend = function() {
+      voiceBtn.classList.add("btn-outline-danger");
+      voiceBtn.classList.remove("btn-danger");
+    };
+    
+    voiceBtn.addEventListener("click", () => {
+      recognition.start();
+    });
+  } else {
+    voiceBtn.style.display = "none";
+  }
 }
 </script>
 

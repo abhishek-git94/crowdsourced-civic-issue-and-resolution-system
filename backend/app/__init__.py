@@ -1,11 +1,13 @@
 import os
 from flask import Flask
 from flask_login import LoginManager
+from authlib.integrations.flask_client import OAuth
 from .config import Config
 from .database import init_db
 from .models import User
 
 login_manager = LoginManager()
+oauth = OAuth()
 
 def create_app(config_class=Config):
     app = Flask(__name__)
@@ -16,6 +18,21 @@ def create_app(config_class=Config):
     login_manager.init_app(app)
     login_manager.login_view = "auth.login"
     login_manager.login_message_category = "warning"
+    oauth.init_app(app)
+    
+    from .utils.notifications import init_firebase
+    init_firebase()
+
+    # Register Google OAuth
+    oauth.register(
+        name='google',
+        client_id=os.environ.get("GOOGLE_CLIENT_ID", "mock_client_id"),
+        client_secret=os.environ.get("GOOGLE_CLIENT_SECRET", "mock_client_secret"),
+        server_metadata_url='https://accounts.google.com/.well-known/openid-configuration',
+        client_kwargs={
+            'scope': 'openid email profile'
+        }
+    )
 
     @login_manager.user_loader
     def load_user(user_id):

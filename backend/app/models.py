@@ -14,6 +14,7 @@ class User(Document, UserMixin):
     role = StringField(max_length=50, default="citizen")
     points = IntField(default=0)
     phone_number = StringField(max_length=20)
+    fcm_token = StringField(max_length=255)
 
     def __repr__(self) -> str:
         return f"<User id={self.id} name={self.name} email={self.email}>"
@@ -34,6 +35,8 @@ class Issue(Document):
     name = StringField(max_length=100, required=True)
     issue = StringField(required=True)
     location = StringField(max_length=200, required=True)
+    latitude = FloatField()
+    longitude = FloatField()
     file = StringField(max_length=200)
 
     status = StringField(max_length=50, default="Pending")

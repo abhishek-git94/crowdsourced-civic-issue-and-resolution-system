@@ -1,6 +1,7 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
 from flask_login import login_required, current_user
 from ..models import Message, User, Issue
+from ..utils.encryption import encrypt_message, decrypt_message
 
 chat_bp = Blueprint("chat", __name__, url_prefix="/chat")
 
@@ -30,10 +31,11 @@ def chat_with(user_id):
         issue_id = request.form.get("issue_id")
         if content:
             try:
+                encrypted_content = encrypt_message(content)
                 msg = Message(
                     sender=current_user.id,
                     receiver=user_id,
-                    content=content,
+                    content=encrypted_content,
                     issue=issue_id if issue_id else None
                 )
                 msg.save()
@@ -53,11 +55,12 @@ def chat_with(user_id):
             (Message.sender == user_id) & (Message.receiver == current_user.id)
         ).order_by('created_at')
         
-        # Mark received messages as read
+        # Mark received messages as read and decrypt content
         for m in messages:
             if str(m.receiver.id) == str(current_user.id) and not m.is_read:
                 m.is_read = True
                 m.save()
+            m.content = decrypt_message(m.content)
             
         return render_template("chat/conversation.html", other_user=other_user, messages=messages)
     except Exception as e:

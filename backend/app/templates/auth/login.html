@@ -47,6 +47,16 @@
             Login
           </button>
 
+          <div class="d-flex align-items-center my-4">
+            <hr class="flex-grow-1">
+            <span class="mx-2 text-muted small">OR</span>
+            <hr class="flex-grow-1">
+          </div>
+
+          <a href="{{ url_for('auth.login_google') }}" class="btn btn-outline-dark w-100 py-2 fw-semibold rounded-3 d-flex align-items-center justify-content-center">
+            <i class="bi bi-google text-danger me-2"></i> Continue with Google
+          </a>
+
         </form>
 
       </div>

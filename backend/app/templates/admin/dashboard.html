@@ -81,7 +81,7 @@
     </div>
 
     <!-- PRIORITIZED ISSUES -->
-    <div class="col-md-5">
+    <div class="col-md-7">
       <div class="card shadow-sm border-0 h-100">
         <div class="card-body">
           <h5 class="mb-3 fw-semibold">High Priority Issues</h5>
@@ -104,6 +104,49 @@
                     </span>
                   </td>
                   <td>{{ issue.upvotes }}</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- DEPARTMENT RANKING -->
+    <div class="col-md-5">
+      <div class="card shadow-sm border-0 h-100">
+        <div class="card-body">
+          <h5 class="mb-3 fw-semibold">Department Efficiency Ranking</h5>
+          <div class="table-responsive">
+            <table class="table table-sm small align-middle">
+              <thead>
+                <tr>
+                  <th>Rank</th>
+                  <th>Department</th>
+                  <th>Avg Time (hrs)</th>
+                  <th>Resolved</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for row in department_rankings %}
+                <tr>
+                  <td><strong>#{{ loop.index }}</strong></td>
+                  <td class="text-truncate" style="max-width: 120px;" title="{{ row['_id'] }}">{{ row['_id'] }}</td>
+                  <td>
+                    {% if row['avg_hours'] < 24 %}
+                      <span class="text-success fw-bold">{{ "%.1f"|format(row['avg_hours']) }}</span>
+                    {% elif row['avg_hours'] < 72 %}
+                      <span class="text-warning fw-bold">{{ "%.1f"|format(row['avg_hours']) }}</span>
+                    {% else %}
+                      <span class="text-danger fw-bold">{{ "%.1f"|format(row['avg_hours']) }}</span>
+                    {% endif %}
+                  </td>
+                  <td>{{ row['resolved_count'] }}</td>
+                </tr>
+                {% else %}
+                <tr>
+                  <td colspan="4" class="text-center text-muted">No data available yet</td>
                 </tr>
                 {% endfor %}
               </tbody>

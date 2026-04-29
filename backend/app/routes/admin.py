@@ -52,6 +52,24 @@ def dashboard():
         # Prioritized issues
         prioritized_issues = Issue.objects(status__ne="Resolved").order_by('-upvotes').limit(10)
         
+        # Department Rankings (Efficiency Engine)
+        rankings_pipeline = [
+            {"$match": {"status": {"$in": ["Resolved", "Resolved (Unconfirmed)"]}, "assigned_to": {"$ne": None}, "resolved_at": {"$ne": None}}},
+            {"$project": {
+                "department": "$assigned_to",
+                "resolution_time": {
+                    "$divide": [{"$subtract": ["$resolved_at", "$created_at"]}, 3600000] # hours
+                }
+            }},
+            {"$group": {
+                "_id": "$department",
+                "avg_hours": {"$avg": "$resolution_time"},
+                "resolved_count": {"$sum": 1}
+            }},
+            {"$sort": {"avg_hours": 1}}
+        ]
+        department_rankings = list(Issue.objects.aggregate(rankings_pipeline))
+        
     except Exception as e:
         current_app.logger.error(f"Dashboard error: {e}")
         flash("Database error loading dashboard.", "danger")
@@ -64,7 +82,8 @@ def dashboard():
         critical_count=critical_count, status_labels=status_labels,
         status_values=status_values, category_labels=category_labels,
         category_values=category_values, daily_labels=daily_labels,
-        daily_values=daily_values, prioritized_issues=prioritized_issues
+        daily_values=daily_values, prioritized_issues=prioritized_issues,
+        department_rankings=department_rankings
     )
 
 @admin_bp.route("/issues")
@@ -102,6 +121,8 @@ def assign_issue(issue_id):
     flash("Issue assigned successfully.", "success")
     return redirect(url_for("admin.issues", status=status))
 
+from ..utils.notifications import notify_status_change
+
 @admin_bp.route("/issues/<issue_id>/status", methods=["POST"])
 @role_required("admin")
 def update_status(issue_id):
@@ -119,6 +140,10 @@ def update_status(issue_id):
             
         issue.status = new_status
         issue.save()
+        
+        # Trigger push notification
+        notify_status_change(issue)
+        
     except Exception:
         flash("Database error updating status.", "danger")
         return redirect(url_for("admin.issues", status=status_filter))
@@ -182,6 +207,10 @@ def manager_update(issue_id):
             
         issue.status = new_status
         issue.save()
+        
+        # Trigger push notification
+        notify_status_change(issue)
+        
     except Exception:
         flash("Update failed.", "danger")
     
