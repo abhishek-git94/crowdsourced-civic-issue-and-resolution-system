@@ -16,6 +16,5 @@ scikit-learn
 pandas
 numpy
 tensorflow
-firebase-admin
 Authlib
 cryptography

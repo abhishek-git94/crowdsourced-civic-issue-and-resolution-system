@@ -10,7 +10,12 @@ login_manager = LoginManager()
 oauth = OAuth()
 
 def create_app(config_class=Config):
-    app = Flask(__name__)
+    import os
+    base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    frontend_dir = os.path.join(base_dir, 'frontend')
+    app = Flask(__name__, 
+                template_folder=os.path.join(frontend_dir, 'templates'),
+                static_folder=os.path.join(frontend_dir, 'static'))
     app.config.from_object(config_class)
 
     # Initialize extensions
@@ -20,8 +25,8 @@ def create_app(config_class=Config):
     login_manager.login_message_category = "warning"
     oauth.init_app(app)
     
-    from .utils.notifications import init_firebase
-    init_firebase()
+
+
 
     # Register Google OAuth
     oauth.register(
@@ -65,3 +70,4 @@ def create_app(config_class=Config):
     # Base.metadata.create_all(bind=engine)
 
     return app
+
