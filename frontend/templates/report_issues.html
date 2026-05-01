@@ -99,7 +99,7 @@ if (analyzeBtn) {
     form.append("location", document.getElementById("location").value);
 
     try {
-      const response = await fetch("/analyze-image", { method: "POST", body: form });
+      const response = await fetch("/api/analyze-image", { method: "POST", body: form });
       const data = await response.json();
 
       if (data.description) {

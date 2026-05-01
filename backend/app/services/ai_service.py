@@ -153,11 +153,12 @@ Write the description now:"""
         category = self.categorize_issue(objects)
         description = self.generate_description(objects, location, category)
         
+        max_confidence = max([obj['confidence'] for obj in objects], default=0)
+
         # Use SVM NLP Classifier for severity if description is available
         if description:
             severity = nlp_classifier.predict_severity(description)
         else:
-            max_confidence = max([obj['confidence'] for obj in objects], default=0)
             if max_confidence > 80:
                 severity = 'High'
             elif max_confidence > 50:
