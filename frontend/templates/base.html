@@ -182,13 +182,12 @@
   import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-analytics.js";
 
   const firebaseConfig = {
-    apiKey: "AIzaSyDEPCROTh2xz4E9N0iZa_EfBz6WNkW30Xs",
-    authDomain: "jansuvidha-aa797.firebaseapp.com",
-    projectId: "jansuvidha-aa797",
-    storageBucket: "jansuvidha-aa797.firebasestorage.app",
-    messagingSenderId: "387345967532",
-    appId: "1:387345967532:web:a044febc537a074997b209",
-    measurementId: "G-9JPZBR6W4M"
+    apiKey: "{{ config.FIREBASE_API_KEY }}",
+    authDomain: "{{ config.FIREBASE_AUTH_DOMAIN }}",
+    projectId: "{{ config.FIREBASE_PROJECT_ID }}",
+    storageBucket: "{{ config.FIREBASE_STORAGE_BUCKET }}",
+    messagingSenderId: "{{ config.FIREBASE_MESSAGING_SENDER_ID }}",
+    appId: "{{ config.FIREBASE_APP_ID }}"
   };
 
   const app = initializeApp(firebaseConfig);
