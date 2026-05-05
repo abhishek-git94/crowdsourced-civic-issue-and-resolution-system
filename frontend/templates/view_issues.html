@@ -1,64 +1,103 @@
 {% extends "base.html" %}
 {% block content %}
 
-<div class="container mt-4">
-    <h2 class="mb-4">All Reported Issues</h2>
+<div class="container mt-5 mb-5">
+    <div class="text-center mb-5">
+        <h2 class="display-5 fw-bold text-gradient mb-2">Explore Reported Issues</h2>
+        <p class="text-muted fs-5">Community verified issues affecting your city.</p>
+    </div>
 
     {% if issues %}
+    <div class="stagger-fade">
         {% for issue in issues %}
-        <div class="card mb-3 issue-card shadow-sm">
-            <div class="card-body d-flex justify-content-between align-items-center">
+        <div class="card mb-4 issue-card shadow-sm border-0 rounded-4 {% if 'Resolved' in issue.status %}resolved{% elif issue.severity == 'High' %}critical{% endif %}">
+            <div class="card-body p-4 d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-4">
 
                 <!-- LEFT SIDE: Issue Info -->
-                <div class="flex-grow-1 pe-3">
-                    <h5 class="card-title">{{ issue.issue }}</h5>
-                    <p class="card-text text-muted mb-1">
-                        <strong>Location:</strong> {{ issue.location }}
-                    </p>
+                <div class="flex-grow-1">
+                    <div class="d-flex align-items-start gap-3 mb-2">
+                        <div class="flex-grow-1">
+                            <h4 class="card-title fw-bold mb-1">{{ issue.issue }}</h4>
+                            <p class="card-text text-muted mb-3 fs-6">
+                                <i class="bi bi-geo-alt-fill text-danger me-1"></i> {{ issue.location }}
+                            </p>
+                        </div>
+                    </div>
 
-                    <small class="text-secondary">
-                        Status: <span class="badge bg-{{ 'success' if issue.status == 'Resolved' else 'warning' if issue.status == 'Resolved (Unconfirmed)' else 'info' if issue.status == 'In Progress' else 'secondary' }}">{{ issue.status }}</span> • 
-                        Severity: <span class="badge bg-{{ 'danger' if issue.severity == 'High' else 'warning text-dark' if issue.severity == 'Medium' else 'success' }}">{{ issue.severity or 'Low' }}</span> • 
-                        Upvotes: <span class="upvote-count-text">{{ issue.upvotes }}</span>
-                    </small>
+                    <div class="d-flex flex-wrap gap-2 mb-3">
+                        <span class="status-badge {% if 'Resolved' in issue.status %}status-resolved{% elif issue.status == 'In Progress' %}status-progress{% elif issue.status == 'Linked' %}status-linked{% else %}status-pending{% endif %}">
+                            <i class="bi {% if 'Resolved' in issue.status %}bi-check-circle-fill{% elif issue.status == 'In Progress' %}bi-arrow-repeat{% else %}bi-clock{% endif %}"></i>
+                            {{ issue.status }}
+                        </span>
+                        
+                        <span class="badge rounded-pill px-3 py-2 {% if issue.severity == 'High' %}bg-danger text-white{% elif issue.severity == 'Medium' %}bg-warning text-dark{% else %}bg-success text-white{% endif %}">
+                            <i class="bi {% if issue.severity == 'High' %}bi-exclamation-triangle{% elif issue.severity == 'Medium' %}bi-exclamation{% else %}bi-check{% endif %} me-1"></i>
+                            {{ issue.severity or 'Low' }} Severity
+                        </span>
+                        
+                        {% if issue.cluster_id and issue.cluster_id != -1 %}
+                          <span class="badge rounded-pill px-3 py-2 bg-info text-dark">
+                              <i class="bi bi-diagram-3-fill"></i> Cluster #{{ issue.cluster_id }}
+                          </span>
+                        {% elif issue.is_duplicate_of %}
+                          <span class="badge rounded-pill px-3 py-2 bg-secondary">
+                              <i class="bi bi-link-45deg"></i> Linked
+                          </span>
+                        {% endif %}
+                    </div>
 
-                    {% if issue.status == 'Resolved (Unconfirmed)' and issue.user_id == current_user.id %}
-                    <div class="mt-3">
+                    <div class="d-flex flex-wrap gap-2 align-items-center">
+                        {% if issue.status == 'Resolved (Unconfirmed)' and issue.user_id == current_user.id %}
                         <form action="{{ url_for('issues.confirm_resolve', issue_id=issue.id) }}" method="POST" class="d-inline">
                             <button type="submit" class="btn btn-sm btn-success">
-                                <i class="bi bi-check-circle"></i> Confirm Resolution
+                                <i class="bi bi-check-circle me-1"></i> Confirm Resolution
                             </button>
                         </form>
-                    </div>
-                    {% endif %}
+                        {% endif %}
 
-                    {% if issue.assigned_to %}
-                    <div class="mt-2">
-                        <a href="{{ url_for('chat.chat_with', user_id=issue.assigned_to_id if issue.assigned_to_id else 1) }}" class="btn btn-sm btn-outline-primary py-0" style="font-size: 0.8rem;">
-                            <i class="bi bi-chat-text"></i> Message Officer
+                        {% if issue.assigned_to %}
+                        <a href="{{ url_for('chat.chat_with', user_id=issue.assigned_to_id if issue.assigned_to_id else 1) }}" class="btn btn-sm btn-outline-primary py-1" style="font-size: 0.8rem;">
+                            <i class="bi bi-chat-text me-1"></i> Message Officer
                         </a>
+                        {% endif %}
+
+                        <span class="text-muted small ms-auto">
+                            <i class="bi bi-clock me-1"></i>
+                            {{ issue.created_at.strftime('%b %d, %Y') if issue.created_at else 'Recently' }}
+                        </span>
                     </div>
-                    {% endif %}
                 </div>
 
                 <!-- RIGHT SIDE: Upvote Button -->
-                <button 
-                    type="button"
-                    class="btn upvote-btn {% if issue.has_upvoted %}upvoted{% endif %}"
-                    data-issue-id="{{ issue.id }}"
-                    data-upvoted="{% if issue.has_upvoted %}1{% else %}0{% endif %}"
-                >
-                    <span class="upvote-icon">⭐</span>
-                    <span class="upvote-label">
-                        {% if issue.has_upvoted %} Upvoted {% else %} Upvote {% endif %}
-                    </span>
-                    <span class="upvote-count">{{ issue.upvotes }}</span>
-                </button>
+                <div class="d-flex align-items-center">
+                    <button 
+                        type="button"
+                        class="btn upvote-btn shadow-sm py-2 px-4 {% if issue.has_upvoted %}upvoted{% endif %}"
+                        data-issue-id="{{ issue.id }}"
+                        data-upvoted="{% if issue.has_upvoted %}1{% else %}0{% endif %}"
+                    >
+                        <span class="upvote-icon"><i class="bi bi-star-fill text-warning"></i></span>
+                        <span class="upvote-label fw-bold ms-1">
+                            {% if issue.has_upvoted %} Upvoted {% else %} Upvote {% endif %}
+                        </span>
+                        <span class="upvote-count ms-2 badge bg-light text-dark border">{{ issue.upvotes }}</span>
+                    </button>
+                </div>
             </div>
         </div>
         {% endfor %}
+    </div>
     {% else %}
-        <p class="text-muted">No issues reported yet.</p>
+        <div class="empty-state">
+            <div class="empty-icon">
+                <i class="bi bi-inbox"></i>
+            </div>
+            <h3 class="fw-bold">No issues reported yet.</h3>
+            <p>Be the first to help your community!</p>
+            <a href="{{ url_for('issues.report_issue') }}" class="btn btn-primary btn-lg">
+                <i class="bi bi-plus-circle me-2"></i> Report an Issue
+            </a>
+        </div>
     {% endif %}
 </div>
 

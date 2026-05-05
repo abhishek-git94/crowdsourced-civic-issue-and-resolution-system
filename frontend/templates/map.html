@@ -45,7 +45,7 @@ issues.forEach(issue => {
     <a href="/view" class="btn btn-primary btn-sm mt-2">View Issues</a>
   `;
 
-  if (issue.latitude && issue.longitude) {
+  if (issue.latitude && issue.longitude && issue.latitude !== null && issue.longitude !== null) {
     const marker = L.marker([issue.latitude, issue.longitude]).bindPopup(popup);
     markers.addLayer(marker);
   } else {

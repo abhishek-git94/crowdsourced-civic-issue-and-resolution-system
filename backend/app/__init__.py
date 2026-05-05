@@ -6,6 +6,21 @@ from .config import Config
 from .database import init_db
 from .models import User
 
+import firebase_admin
+from firebase_admin import credentials
+import logging
+
+cred_path = os.path.join(os.path.dirname(__file__), 'firebase-adminsdk.json')
+if os.path.exists(cred_path):
+    try:
+        cred = credentials.Certificate(cred_path)
+        firebase_admin.initialize_app(cred)
+        logging.info("Firebase Admin initialized securely.")
+    except Exception as e:
+        logging.warning(f"Firebase Admin SDK init failed: {e}")
+else:
+    logging.info("firebase-adminsdk.json not found. Running Firebase Auth in DEV mode.")
+
 login_manager = LoginManager()
 oauth = OAuth()
 

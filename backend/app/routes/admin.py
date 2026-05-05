@@ -90,17 +90,24 @@ def dashboard():
 @role_required("admin")
 def issues():
     status = request.args.get("status", "all")
+    severity = request.args.get("severity", "all")
+    location = request.args.get("location", "")
     try:
         q = Issue.objects.order_by('-created_at')
         if status != "all":
             q = q.filter(status=status)
+        if severity != "all":
+            q = q.filter(severity=severity)
+        if location:
+            q = q.filter(location__icontains=location)
+            
         issues = q.all()
         workers = User.objects(role="worker")
     except Exception:
         flash("Database error.", "danger")
         return redirect(url_for("admin.dashboard"))
 
-    return render_template("admin/issues.html", issues=issues, workers=workers, selected_status=status)
+    return render_template("admin/issues.html", issues=issues, workers=workers, selected_status=status, selected_severity=severity, search_location=location)
 
 @admin_bp.route("/issues/<issue_id>/assign", methods=["POST"])
 @role_required("admin")
@@ -216,3 +223,28 @@ def manager_update(issue_id):
     
     flash("Status updated.", "success")
     return redirect(url_for("admin.manager_dashboard"))
+
+@admin_bp.route("/cluster_issues", methods=["POST"])
+@role_required("admin")
+def cluster_issues():
+    try:
+        issues = Issue.objects(status__ne="Resolved")
+        # Simple Location-based grouping
+        cluster_map = {}
+        cluster_counter = 1
+        
+        for issue in issues:
+            loc = issue.location.lower().strip()
+            if loc not in cluster_map:
+                cluster_map[loc] = cluster_counter
+                cluster_counter += 1
+                
+            issue.cluster_id = cluster_map[loc]
+            issue.save()
+            
+        flash(f"Successfully clustered active issues into {cluster_counter - 1} groups based on location.", "success")
+    except Exception as e:
+        current_app.logger.error(f"Clustering error: {e}")
+        flash("Failed to run clustering algorithm.", "danger")
+        
+    return redirect(url_for("admin.issues"))
