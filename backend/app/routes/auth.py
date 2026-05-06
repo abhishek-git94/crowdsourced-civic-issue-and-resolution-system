@@ -109,3 +109,53 @@ def logout():
 @login_required
 def profile():
     return render_template("auth/profile.html", user=current_user)
+
+@auth_bp.route("/firebase-login", methods=["POST"])
+def firebase_login():
+    from firebase_admin import auth as firebase_auth
+    import firebase_admin
+    import jwt
+    import logging
+
+    try:
+        data = request.get_json()
+        id_token = data.get("idToken")
+        payload_name = data.get("name")
+        
+        if not id_token:
+            return {"success": False, "error": "No token provided"}, 400
+            
+        if firebase_admin._apps:
+            decoded_token = firebase_auth.verify_id_token(id_token)
+        else:
+            # DEV MODE FALLBACK
+            logging.warning("DEV MODE: Decoding Firebase token WITHOUT signature verification.")
+            decoded_token = jwt.decode(id_token, options={"verify_signature": False})
+            
+        email = decoded_token.get("email")
+        name = payload_name or decoded_token.get("name", email.split('@')[0])
+        
+        user = User.objects(email=email).first()
+        if not user:
+            # Register user
+            import secrets
+            random_password = secrets.token_urlsafe(16)
+            user = User(
+                name=name,
+                email=email,
+                password=generate_password_hash(random_password),
+                role="citizen"
+            )
+            user.save()
+            
+        login_user(user)
+        session["user_id"] = str(user.id)
+        session["user_name"] = user.name
+        session["user_role"] = user.role
+        
+        return {"success": True, "message": "Logged in successfully"}
+        
+    except Exception as e:
+        import logging
+        logging.error(f"Firebase auth error: {e}")
+        return {"success": False, "error": str(e)}, 401

@@ -22,8 +22,8 @@ def issue_map():
             "id": str(i.id),
             "title": (i.issue[:40] + "...") if i.issue else "No description",
             "location": i.location,
-            "lat": None,
-            "lng": None,
+            "latitude": i.latitude,
+            "longitude": i.longitude,
             "status": i.status,
             "category": i.category,
             "upvotes": i.upvotes

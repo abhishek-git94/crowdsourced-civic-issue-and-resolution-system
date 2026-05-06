@@ -18,3 +18,5 @@ numpy
 tensorflow
 Authlib
 cryptography
+sentence-transformers
+openai

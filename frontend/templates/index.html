@@ -1,64 +1,212 @@
 {% extends "base.html" %}
 {% block content %}
 
-<div class="row pt-5 align-items-center">
-    <div class="col-lg-6">
-        <h1 class="display-3 fw-bold text-primary mb-4">Empowering <span class="text-dark">Citizens</span>, Transforming Cities.</h1>
-        <p class="lead text-muted mb-5 fs-4">
-            Jan Suvidha is the next-generation civic engagement platform using AI to bridge the gap between people and progress.
+<!-- HERO SECTION -->
+<div class="row pt-5 align-items-center min-vh-75">
+    <div class="col-lg-6 pe-lg-5">
+        <div class="badge bg-primary bg-opacity-10 text-primary px-3 py-2 rounded-pill mb-4 fw-bold shadow-sm pulse-glow">
+            🚀 The Future of Civic Tech
+        </div>
+        <h1 class="display-1 fw-bolder mb-2" style="line-height: 1.1; font-size: 4.5rem;">
+            <span class="text-gradient">Jan Suvidha</span>
+        </h1>
+        <h2 class="display-6 fw-bold mb-4 text-dark" style="line-height: 1.2;">
+            Empowering Citizens, Transforming Cities.
+        </h2>
+        <p class="lead text-muted mb-5 fs-4" style="font-weight: 400;">
+            The next-generation civic engagement platform. We use AI to bridge the gap between people and progress.
         </p>
-        <div class="d-flex gap-3 mb-5">
-            <a href="{{ url_for('issues.report_issue') }}" class="btn btn-primary btn-lg shadow">
-                <i class="bi bi-megaphone-fill me-2"></i> Report Now
+        <div class="d-flex flex-wrap gap-3 mb-5">
+            <a href="{{ url_for('issues.report_issue') }}" class="btn btn-primary btn-lg shadow-lg px-4 py-3 pulse-glow">
+                <i class="bi bi-megaphone-fill me-2"></i> Report an Issue
             </a>
-            <a href="{{ url_for('issues.view_issues') }}" class="btn btn-outline-dark btn-lg">
-                Explore Issues
+            <a href="{{ url_for('issues.view_issues') }}" class="btn btn-outline-dark btn-lg px-4 py-3">
+                <i class="bi bi-search me-2"></i> Explore Reports
             </a>
         </div>
-    </div>
-    <div class="col-lg-6 d-none d-lg-block text-center">
-        <div class="p-5 bg-white rounded-5 shadow-lg border-bottom border-5 border-primary">
-            <h2 class="display-1 fw-bold text-primary mb-0">98%</h2>
-            <p class="text-muted fw-bold text-uppercase tracking-widest">Resolution Rate</p>
-            <hr class="my-4">
-            <div class="row">
-                <div class="col-6">
-                    <h4 class="fw-bold fs-2">1.2k</h4>
-                    <p class="text-muted small">Issues Fixed</p>
+
+        <!-- Trust badges -->
+        <div class="d-flex flex-wrap gap-4 align-items-center">
+            <div class="d-flex align-items-center gap-2">
+                <div class="bg-success bg-opacity-10 rounded-circle p-2">
+                    <i class="bi bi-shield-check text-success fs-5"></i>
                 </div>
-                <div class="col-6">
-                    <h4 class="fw-bold fs-2">5k+</h4>
-                    <p class="text-muted small">Active Citizens</p>
+                <span class="text-muted small fw-semibold">AI-Powered</span>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+                <div class="bg-primary bg-opacity-10 rounded-circle p-2">
+                    <i class="bi bi-geo-alt text-primary fs-5"></i>
+                </div>
+                <span class="text-muted small fw-semibold">Location-Based</span>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+                <div class="bg-warning bg-opacity-10 rounded-circle p-2">
+                    <i class="bi bi-people text-warning fs-5"></i>
+                </div>
+                <span class="text-muted small fw-semibold">Community Driven</span>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6 d-none d-lg-block position-relative">
+        <div class="position-absolute top-0 end-0 bg-gradient-primary rounded-circle blur-bg float-anim" style="width: 300px; height: 300px; opacity: 0.1; filter: blur(40px); z-index: -1;"></div>
+        
+        <div class="card p-5 border-0 rounded-4 shadow-lg text-center float-anim bg-white" style="border-bottom: 6px solid var(--primary) !important;">
+            <div class="card-body">
+                <h2 class="display-1 fw-bold text-gradient mb-0">98%</h2>
+                <p class="text-muted fw-bold text-uppercase letter-spacing-wide mb-4">Resolution Rate</p>
+                
+                <div class="row pt-4 border-top">
+                    <div class="col-6">
+                        <h4 class="fw-bold fs-2 text-dark mb-0">1.2k+</h4>
+                        <p class="text-muted small fw-semibold">Issues Fixed</p>
+                    </div>
+                    <div class="col-6">
+                        <h4 class="fw-bold fs-2 text-dark mb-0">5k+</h4>
+                        <p class="text-muted small fw-semibold">Active Citizens</p>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
 
-<div class="row py-5 mt-5">
+<!-- FEATURES SECTION -->
+<div class="py-5 mt-4">
     <div class="text-center mb-5">
-        <h2 class="fw-bold">How Jan Suvidha Works</h2>
-        <p class="text-muted">A seamless, AI-powered loop of accountability.</p>
+        <span class="text-primary fw-bold text-uppercase tracking-widest small">Features</span>
+        <h2 class="fw-bold display-5 mt-2">Powerful Civic Tools</h2>
+        <p class="text-muted fs-5">Everything you need to make your city better.</p>
     </div>
-    <div class="col-md-3 text-center px-4">
-        <div class="fs-1 text-primary mb-3"><i class="bi bi-camera-fill"></i></div>
-        <h5 class="fw-bold">Report</h5>
-        <p class="small text-muted">Capture and upload with AI auto-categorization.</p>
+    
+    <div class="row stagger-fade">
+        <div class="col-md-4 mb-4">
+            <div class="card h-100 border-0 shadow-sm p-4 feature-card">
+                <div class="feature-icon bg-primary bg-opacity-10 text-primary">
+                    <i class="bi bi-cpu"></i>
+                </div>
+                <h5 class="fw-bold">AI-Powered Detection</h5>
+                <p class="text-muted small">Automatic issue categorization and severity assessment using advanced YOLO models.</p>
+            </div>
+        </div>
+        
+        <div class="col-md-4 mb-4">
+            <div class="card h-100 border-0 shadow-sm p-4 feature-card">
+                <div class="feature-icon bg-success bg-opacity-10 text-success">
+                    <i class="bi bi-diagram-3"></i>
+                </div>
+                <h5 class="fw-bold">Smart Clustering</h5>
+                <p class="text-muted small">Duplicate detection groups similar issues together for efficient processing.</p>
+            </div>
+        </div>
+        
+        <div class="col-md-4 mb-4">
+            <div class="card h-100 border-0 shadow-sm p-4 feature-card">
+                <div class="feature-icon bg-warning bg-opacity-10 text-warning">
+                    <i class="bi bi-geo-alt"></i>
+                </div>
+                <h5 class="fw-bold">Interactive Map</h5>
+                <p class="text-muted small">Visualize all reported issues on an interactive map with clustering.</p>
+            </div>
+        </div>
+        
+        <div class="col-md-4 mb-4">
+            <div class="card h-100 border-0 shadow-sm p-4 feature-card">
+                <div class="feature-icon bg-info bg-opacity-10 text-info">
+                    <i class="bi bi-bell"></i>
+                </div>
+                <h5 class="fw-bold">Real-time Notifications</h5>
+                <p class="text-muted small">Get instant updates when your reported issues are addressed.</p>
+            </div>
+        </div>
+        
+        <div class="col-md-4 mb-4">
+            <div class="card h-100 border-0 shadow-sm p-4 feature-card">
+                <div class="feature-icon bg-gradient-purple text-white">
+                    <i class="bi bi-trophy"></i>
+                </div>
+                <h5 class="fw-bold">Gamification</h5>
+                <p class="text-muted small">Earn points, climb the leaderboard, and get recognized for your contributions.</p>
+            </div>
+        </div>
+        
+        <div class="col-md-4 mb-4">
+            <div class="card h-100 border-0 shadow-sm p-4 feature-card">
+                <div class="feature-icon bg-gradient-cyan text-white">
+                    <i class="bi bi-pie-chart"></i>
+                </div>
+                <h5 class="fw-bold">Analytics Dashboard</h5>
+                <p class="text-muted small">Comprehensive insights for administrators to track trends and performance.</p>
+            </div>
+        </div>
     </div>
-    <div class="col-md-3 text-center px-4">
-        <div class="fs-1 text-primary mb-3"><i class="bi bi-shield-check"></i></div>
-        <h5 class="fw-bold">Validate</h5>
-        <p class="small text-muted">Community upvotes verify and prioritize needs.</p>
+</div>
+
+<div class="section-divider"></div>
+
+<!-- HOW IT WORKS SECTION -->
+<div class="row py-5 mt-2 align-items-center">
+    <div class="text-center mb-5">
+        <span class="text-primary fw-bold text-uppercase tracking-widest small">The Process</span>
+        <h2 class="fw-bold display-5 mt-2">How Jan Suvidha Works</h2>
+        <p class="text-muted fs-5">A seamless, AI-powered loop of accountability.</p>
     </div>
-    <div class="col-md-3 text-center px-4">
-        <div class="fs-1 text-primary mb-3"><i class="bi bi-tools"></i></div>
-        <h5 class="fw-bold">Resolve</h5>
-        <p class="small text-muted">Authorities track and act on verified reports.</p>
+    
+    <div class="col-md-3 mb-4">
+        <div class="card h-100 text-center border-0 shadow-sm p-4 hover-lift category-card">
+            <div class="mx-auto bg-primary bg-opacity-10 text-primary rounded-circle d-flex align-items-center justify-content-center mb-4" style="width: 80px; height: 80px;">
+                <i class="bi bi-camera-fill fs-1"></i>
+            </div>
+            <h5 class="fw-bold">1. Report</h5>
+            <p class="small text-muted mb-0">Capture and upload with AI auto-categorization.</p>
+        </div>
     </div>
-    <div class="col-md-3 text-center px-4">
-        <div class="fs-1 text-primary mb-3"><i class="bi bi-check-all"></i></div>
-        <h5 class="fw-bold">Confirm</h5>
-        <p class="small text-muted">Closing the loop with citizen-confirmed resolution.</p>
+    
+    <div class="col-md-3 mb-4">
+        <div class="card h-100 text-center border-0 shadow-sm p-4 hover-lift category-card">
+            <div class="mx-auto bg-warning bg-opacity-10 text-warning rounded-circle d-flex align-items-center justify-content-center mb-4" style="width: 80px; height: 80px;">
+                <i class="bi bi-shield-check fs-1"></i>
+            </div>
+            <h5 class="fw-bold">2. Validate</h5>
+            <p class="small text-muted mb-0">Community upvotes verify and prioritize needs.</p>
+        </div>
+    </div>
+    
+    <div class="col-md-3 mb-4">
+        <div class="card h-100 text-center border-0 shadow-sm p-4 hover-lift category-card">
+            <div class="mx-auto bg-info bg-opacity-10 text-info rounded-circle d-flex align-items-center justify-content-center mb-4" style="width: 80px; height: 80px;">
+                <i class="bi bi-tools fs-1"></i>
+            </div>
+            <h5 class="fw-bold">3. Resolve</h5>
+            <p class="small text-muted mb-0">Authorities track and act on verified reports.</p>
+        </div>
+    </div>
+    
+    <div class="col-md-3 mb-4">
+        <div class="card h-100 text-center border-0 shadow-sm p-4 hover-lift category-card">
+            <div class="mx-auto bg-success bg-opacity-10 text-success rounded-circle d-flex align-items-center justify-content-center mb-4" style="width: 80px; height: 80px;">
+                <i class="bi bi-check-all fs-1"></i>
+            </div>
+            <h5 class="fw-bold">4. Confirm</h5>
+            <p class="small text-muted mb-0">Closing the loop with citizen-confirmed resolution.</p>
+        </div>
+    </div>
+</div>
+
+<!-- CTA SECTION -->
+<div class="row py-5 mt-4">
+    <div class="col-12">
+        <div class="card bg-gradient-primary text-white p-5 text-center rounded-4 border-0">
+            <h2 class="fw-bold mb-3">Ready to Make a Difference?</h2>
+            <p class="mb-4 fs-5 opacity-75">Join thousands of citizens working together to improve their neighborhoods.</p>
+            <div class="d-flex justify-content-center gap-3 flex-wrap">
+                <a href="{{ url_for('auth.register') }}" class="btn btn-light btn-lg px-5">
+                    <i class="bi bi-person-plus me-2"></i> Get Started Free
+                </a>
+                <a href="{{ url_for('issues.view_issues') }}" class="btn btn-outline-light btn-lg px-5">
+                    <i class="bi bi-eye me-2"></i> See Issues
+                </a>
+            </div>
+        </div>
     </div>
 </div>
 

@@ -50,6 +50,7 @@ class Issue(Document):
 
     is_duplicate_of = ReferenceField('self')
     embedding = StringField()
+    cluster_id = IntField(default=-1)
 
     upvotes = IntField(default=0)
     created_at = DateTimeField(default=datetime.utcnow)

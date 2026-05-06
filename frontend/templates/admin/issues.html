@@ -4,25 +4,46 @@
 <div class="container mt-4">
   <div class="d-flex justify-content-between align-items-center mb-3">
     <h2>Manage Issues</h2>
-    <a href="{{ url_for('admin.dashboard') }}" class="btn btn-outline-secondary btn-sm">
-      ← Back to Dashboard
-    </a>
+    <div class="d-flex gap-2">
+      <form action="{{ url_for('admin.cluster_issues') }}" method="POST">
+        <button type="submit" class="btn btn-warning btn-sm fw-bold">
+          <i class="bi bi-diagram-3-fill"></i> Run AI Clustering
+        </button>
+      </form>
+      <a href="{{ url_for('admin.dashboard') }}" class="btn btn-outline-secondary btn-sm">
+        ← Back to Dashboard
+      </a>
+    </div>
   </div>
 
-  <!-- Filter by Status -->
-  <form method="get" class="mb-3">
-    <div class="row g-2 align-items-end">
-      <div class="col-auto">
-        <label class="form-label">Status</label>
+  <!-- Filter by Status, Severity, and Location -->
+  <form method="get" class="mb-4 bg-light p-3 rounded shadow-sm">
+    <div class="row g-3 align-items-end">
+      <div class="col-md-3">
+        <label class="form-label fw-semibold">Status</label>
         <select name="status" class="form-select">
           <option value="all" {% if selected_status == 'all' %}selected{% endif %}>All</option>
           <option value="Pending" {% if selected_status == 'Pending' %}selected{% endif %}>Pending</option>
+          <option value="In Progress" {% if selected_status == 'In Progress' %}selected{% endif %}>In Progress</option>
           <option value="Resolved" {% if selected_status == 'Resolved' %}selected{% endif %}>Resolved</option>
           <option value="Linked" {% if selected_status == 'Linked' %}selected{% endif %}>Duplicate/Linked</option>
         </select>
       </div>
-      <div class="col-auto">
-        <button type="submit" class="btn btn-primary mt-4">Apply Filter</button>
+      <div class="col-md-3">
+        <label class="form-label fw-semibold">Severity</label>
+        <select name="severity" class="form-select">
+          <option value="all" {% if selected_severity == 'all' %}selected{% endif %}>All</option>
+          <option value="High" {% if selected_severity == 'High' %}selected{% endif %}>High</option>
+          <option value="Medium" {% if selected_severity == 'Medium' %}selected{% endif %}>Medium</option>
+          <option value="Low" {% if selected_severity == 'Low' %}selected{% endif %}>Low</option>
+        </select>
+      </div>
+      <div class="col-md-4">
+        <label class="form-label fw-semibold">Location</label>
+        <input type="text" name="location" class="form-control" placeholder="Search by area..." value="{{ search_location }}">
+      </div>
+      <div class="col-md-2">
+        <button type="submit" class="btn btn-primary w-100 fw-bold"><i class="bi bi-funnel-fill"></i> Filter</button>
       </div>
     </div>
   </form>
@@ -33,6 +54,7 @@
         <thead>
           <tr>
             <th>ID</th>
+            <th>Cluster</th>
             <th>Issue</th>
             <th>Location</th>
             <th>Status</th>
@@ -47,16 +69,37 @@
         <tbody>
         {% for issue in issues %}
           <tr>
-            <td>#{{ issue.id }}</td>
-            <td style="max-width: 220px;">
-              {{ issue.issue[:60] }}{% if issue.issue|length > 60 %}...{% endif %}
+            <td class="fw-bold">#{{ issue.id | string | truncate(8, True, '') }}</td>
+            <td>
+              {% if issue.cluster_id and issue.cluster_id != -1 %}
+                <span class="badge bg-info text-dark">C-{{ issue.cluster_id }}</span>
+              {% elif issue.is_duplicate_of %}
+                <span class="badge bg-secondary" title="Duplicate">Linked</span>
+              {% else %}
+                -
+              {% endif %}
             </td>
-            <td>{{ issue.location }}</td>
-            <td>{{ issue.status }}</td>
-            <td>{{ issue.severity or '-' }}</td>
-            <td>{{ issue.upvotes }}</td>
+            <td style="max-width: 200px;" class="text-truncate" title="{{ issue.issue }}">
+              {{ issue.issue }}
+            </td>
+            <td style="max-width: 150px;" class="text-truncate" title="{{ issue.location }}">{{ issue.location }}</td>
+            <td>
+              <span class="badge 
+                {% if 'Resolved' in issue.status %} bg-success 
+                {% elif issue.status == 'In Progress' %} bg-warning text-dark 
+                {% elif issue.status == 'Linked' %} bg-secondary
+                {% else %} bg-danger {% endif %}">
+                {{ issue.status }}
+              </span>
+            </td>
+            <td>
+              <span class="badge bg-{{ 'danger' if issue.severity == 'High' else 'warning text-dark' if issue.severity == 'Medium' else 'success' }}">
+                {{ issue.severity or '-' }}
+              </span>
+            </td>
+            <td class="text-center fw-bold">{{ issue.upvotes }}</td>
             <td>{{ issue.assigned_to or 'Unassigned' }}</td>
-            <td>{{ issue.created_at.strftime("%d-%b %Y") if issue.created_at }}</td>
+            <td>{{ issue.created_at.strftime("%d-%b %y") if issue.created_at }}</td>
             <td>
               <!-- Assign form -->
               <form method="post"

@@ -1,24 +1,58 @@
 import numpy as np
 import json
 
-# -----------------------------
-# Local Embedding (Dummy version)
-# Replace with real model later
-# -----------------------------
+SENTENCE_MODEL = None
+
+def _get_sentence_model():
+    global SENTENCE_MODEL
+    if SENTENCE_MODEL is None:
+        try:
+            from sentence_transformers import SentenceTransformer
+            SENTENCE_MODEL = SentenceTransformer('all-MiniLM-L6-v2')
+            print("✅ Sentence Transformer model loaded")
+        except Exception as e:
+            print(f"⚠️ Failed to load sentence transformer: {e}")
+            SENTENCE_MODEL = False
+    return SENTENCE_MODEL
+
 
 def get_local_embedding(text: str):
-    """Return a simple numeric vector for text (placeholder)."""
-    # In production: replace with real sentence-transformer embedding
+    """Return real embedding vector using sentence-transformers."""
+    model = _get_sentence_model()
+    if model:
+        try:
+            embedding = model.encode(text, convert_to_numpy=True)
+            return embedding.tolist()
+        except Exception as e:
+            print(f"⚠️ Embedding encoding failed: {e}")
     return np.random.rand(384).tolist()
 
 
-# -----------------------------
-# OpenAI Embedding (optional)
-# -----------------------------
 def get_openai_embedding(text: str):
-    """Placeholder for external embedding service."""
-    # Return random until you connect OpenAI API
-    return np.random.rand(384).tolist()
+    """Return embedding using OpenAI API if available, fallback to local."""
+    api_key = None
+    try:
+        from dotenv import load_dotenv
+        import os
+        load_dotenv()
+        api_key = os.getenv("OPENAI_API_KEY")
+    except:
+        pass
+    
+    if not api_key:
+        return get_local_embedding(text)
+    
+    try:
+        from openai import OpenAI
+        client = OpenAI(api_key=api_key)
+        response = client.embeddings.create(
+            model="text-embedding-3-small",
+            input=text
+        )
+        return response.data[0].embedding
+    except Exception as e:
+        print(f"⚠️ OpenAI embedding failed: {e}")
+        return get_local_embedding(text)
 
 
 # -----------------------------
@@ -45,56 +79,31 @@ def json_to_embed(json_str):
         return None
     return json.loads(json_str)
 
-# utils/duplicate_detector.py  (extend)
-import json
-import numpy as np
-
-# existing functions assumed:
-# - get_local_embedding(text) -> list[float]
-# - get_openai_embedding(text) -> list[float]
-# - cosine_similarity(a, b) -> float
-
-def find_similar_issues(db, embedding, top_k=5, min_score=0.65):
+def find_similar_issues(issues, embedding, top_k=5, min_score=0.65):
     """
     Return top_k similar issues as dicts with score >= min_score.
-    db: SQLAlchemy session
-    embedding: list/np.array
+    Used for MongoEngine queryset.
     """
-    # If you added pgvector in DB, use vector search (fast)
-    try:
-        # Example using pgvector cosine similarity (scale to your DB flavor)
-        rows = db.execute(
-            "SELECT id, issue, location, upvotes, embedding, "
-            "1 - (embedding_vector <#> :emb) AS similarity "
-            "FROM issues "
-            "ORDER BY embedding_vector <#> :emb LIMIT :k",
-            {"emb": embedding, "k": top_k}
-        ).fetchall()
-        results = [
-            {"id": r[0], "issue": r[1], "location": r[2], "upvotes": r[3],
-             "embedding": r[4], "similarity": float(r[5])}
-            for r in rows
-            if float(r[5]) >= min_score
-        ]
-        return results
-    except Exception:
-        # fallback to in-app cosine comparisons (works for small recents)
-        from ..models import Issue
-        recent = db.query(Issue).filter(Issue.embedding != None).order_by(Issue.created_at.desc()).limit(200).all()
-        scores = []
-        for old in recent:
-            old_emb = json.loads(old.embedding)
+    scores = []
+    for issue in issues:
+        if not issue.embedding:
+            continue
+        try:
+            old_emb = json.loads(issue.embedding)
             sim = cosine_similarity(embedding, old_emb)
-            scores.append((sim, old))
-        scores.sort(reverse=True, key=lambda x:x[0])
-        results = []
-        for sim, old in scores[:top_k]:
             if sim >= min_score:
-                results.append({
-                    "id": old.id,
-                    "issue": old.issue,
-                    "location": old.location,
-                    "upvotes": old.upvotes,
-                    "similarity": round(sim,3)
-                })
-        return results
+                scores.append((sim, issue))
+        except Exception:
+            continue
+    
+    scores.sort(reverse=True, key=lambda x: x[0])
+    results = []
+    for sim, issue in scores[:top_k]:
+        results.append({
+            "id": str(issue.id),
+            "issue": issue.issue,
+            "location": issue.location,
+            "upvotes": issue.upvotes,
+            "similarity": round(sim, 3)
+        })
+    return results
