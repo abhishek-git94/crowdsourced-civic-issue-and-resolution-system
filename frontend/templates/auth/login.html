@@ -14,17 +14,17 @@
           Login to continue reporting issues.
         </p>
 
-        <form id="loginForm">
+        <form id="loginForm" method="post" action="{{ url_for('auth.login') }}">
           <!-- Email -->
           <div class="mb-3">
             <label class="form-label fw-semibold"><i class="bi bi-envelope-fill"></i> Email</label>
-            <input id="email" type="email" class="form-control p-3" placeholder="you@example.com" required>
+            <input id="email" name="email" type="email" class="form-control p-3" placeholder="you@example.com" required>
           </div>
 
           <!-- Password -->
           <div class="mb-3">
             <label class="form-label fw-semibold"><i class="bi bi-lock-fill"></i> Password</label>
-            <input id="password" type="password" class="form-control p-3" placeholder="Enter password" required>
+            <input id="password" name="password" type="password" class="form-control p-3" placeholder="Enter password" required>
           </div>
 
           <!-- Login Button -->
@@ -57,11 +57,15 @@
 </div>
 
 <script type="module">
+  import { signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
   document.addEventListener('DOMContentLoaded', () => {
     const loginForm = document.getElementById('loginForm');
     const loginBtn = document.getElementById('loginBtn');
     const googleBtn = document.getElementById('googleLoginBtn');
     const errorDiv = document.getElementById('loginError');
+    const auth = window.firebaseAuth || null;
+    const firebaseReady = typeof signInWithEmailAndPassword === 'function' && typeof signInWithPopup === 'function' && typeof GoogleAuthProvider === 'function';
 
     async function sendTokenToBackend(idToken) {
         try {
@@ -98,8 +102,15 @@
         const email = document.getElementById('email').value;
         const password = document.getElementById('password').value;
 
+        if (!firebaseReady || !auth) {
+            loginForm.method = 'post';
+            loginForm.action = "{{ url_for('auth.login') }}";
+            loginForm.submit();
+            return;
+        }
+
         try {
-            const userCredential = await window.signInWithEmailAndPassword(window.firebaseAuth, email, password);
+            const userCredential = await signInWithEmailAndPassword(auth, email, password);
             const idToken = await userCredential.user.getIdToken();
             await sendTokenToBackend(idToken);
         } catch (error) {
@@ -110,9 +121,13 @@
     googleBtn.addEventListener('click', async () => {
         googleBtn.disabled = true;
         errorDiv.style.display = 'none';
-        const provider = new window.GoogleAuthProvider();
+        if (!firebaseReady || !auth) {
+            showError("Firebase is not configured for this page.");
+            return;
+        }
+        const provider = new GoogleAuthProvider();
         try {
-            const result = await window.signInWithPopup(window.firebaseAuth, provider);
+            const result = await signInWithPopup(auth, provider);
             const idToken = await result.user.getIdToken();
             await sendTokenToBackend(idToken);
         } catch (error) {

@@ -190,16 +190,25 @@
     appId: "{{ config.FIREBASE_APP_ID }}"
   };
 
-  const app = initializeApp(firebaseConfig);
-  const analytics = getAnalytics(app);
-  const auth = getAuth(app);
-  
-  // Make auth available globally
+  const hasFirebaseConfig = Boolean(firebaseConfig.apiKey && firebaseConfig.authDomain && firebaseConfig.projectId && firebaseConfig.appId);
+  const app = hasFirebaseConfig ? initializeApp(firebaseConfig) : null;
+  const auth = app ? getAuth(app) : null;
+
+  if (app && hasFirebaseConfig) {
+    try {
+      getAnalytics(app);
+    } catch (error) {
+      console.warn("Firebase analytics unavailable:", error);
+    }
+  }
+
   window.firebaseAuth = auth;
-  window.signInWithEmailAndPassword = signInWithEmailAndPassword;
-  window.signInWithPopup = signInWithPopup;
-  window.GoogleAuthProvider = GoogleAuthProvider;
-  window.createUserWithEmailAndPassword = createUserWithEmailAndPassword;
+  window.firebaseAuthHelpers = {
+    signInWithEmailAndPassword,
+    signInWithPopup,
+    GoogleAuthProvider,
+    createUserWithEmailAndPassword
+  };
 </script>
 
 </body>
