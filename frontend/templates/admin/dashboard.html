@@ -6,40 +6,40 @@
   <h2 class="fw-bold mb-4">Admin Dashboard</h2>
 
   <!-- TOP STATS -->
-  <div class="row g-3 mb-4">
+  <div class="row g-4 mb-5">
 
     <div class="col-md-3">
-      <div class="card shadow-sm border-0 h-100">
-        <div class="card-body">
-          <h6 class="text-muted mb-1">Total Issues</h6>
-          <h3 class="fw-bold">{{ total_issues }}</h3>
+      <div class="card shadow-sm border-0 h-100 rounded-4 dashboard-card bg-gradient-primary text-white">
+        <div class="card-body p-4">
+          <h6 class="text-white-50 text-uppercase fw-bold mb-1"><i class="bi bi-stack"></i> Total Issues</h6>
+          <h2 class="fw-bold display-5 mb-0">{{ total_issues }}</h2>
         </div>
       </div>
     </div>
 
     <div class="col-md-3">
-      <div class="card shadow-sm border-0 h-100">
-        <div class="card-body">
-          <h6 class="text-muted mb-1">Pending</h6>
-          <h3 class="fw-bold">{{ pending_count }}</h3>
+      <div class="card shadow-sm border-0 h-100 rounded-4 dashboard-card bg-gradient-warning text-dark">
+        <div class="card-body p-4">
+          <h6 class="text-dark-50 text-uppercase fw-bold mb-1"><i class="bi bi-hourglass-split"></i> Pending</h6>
+          <h2 class="fw-bold display-5 mb-0">{{ pending_count }}</h2>
         </div>
       </div>
     </div>
 
     <div class="col-md-3">
-      <div class="card shadow-sm border-0 h-100">
-        <div class="card-body">
-          <h6 class="text-muted mb-1">Resolved</h6>
-          <h3 class="fw-bold">{{ resolved_count }}</h3>
+      <div class="card shadow-sm border-0 h-100 rounded-4 dashboard-card bg-gradient-success text-white">
+        <div class="card-body p-4">
+          <h6 class="text-white-50 text-uppercase fw-bold mb-1"><i class="bi bi-check-circle-fill"></i> Resolved</h6>
+          <h2 class="fw-bold display-5 mb-0">{{ resolved_count }}</h2>
         </div>
       </div>
     </div>
 
     <div class="col-md-3">
-      <div class="card shadow-sm border-0 h-100">
-        <div class="card-body">
-          <h6 class="text-muted mb-1">Critical Severity</h6>
-          <h3 class="fw-bold">{{ critical_count }}</h3>
+      <div class="card shadow-sm border-0 h-100 rounded-4 dashboard-card bg-gradient-danger text-white">
+        <div class="card-body p-4">
+          <h6 class="text-white-50 text-uppercase fw-bold mb-1"><i class="bi bi-exclamation-triangle-fill"></i> Critical Severity</h6>
+          <h2 class="fw-bold display-5 mb-0">{{ critical_count }}</h2>
         </div>
       </div>
     </div>
@@ -52,9 +52,9 @@
 
     <!-- STATUS CHART -->
     <div class="col-md-6">
-      <div class="card shadow-sm border-0 h-100">
-        <div class="card-body">
-          <h5 class="mb-3 fw-semibold">Issues by Status</h5>
+      <div class="card shadow-sm border-0 h-100 rounded-4">
+        <div class="card-body p-4">
+          <h5 class="mb-3 fw-bold text-secondary">Issues by Status</h5>
           <canvas id="statusChart" style="height: 300px;"></canvas>
         </div>
       </div>
@@ -177,17 +177,32 @@ document.addEventListener("DOMContentLoaded", function () {
   // -------------------------
   // STATUS CHART
   // -------------------------
+  const statusColors = statusLabels.map(label => {
+      if(label === 'Resolved') return '#198754';
+      if(label === 'Pending') return '#ffc107';
+      if(label === 'In Progress') return '#0dcaf0';
+      if(label === 'Linked') return '#6c757d';
+      return '#0d6efd';
+  });
+
   new Chart(document.getElementById("statusChart"), {
     type: "doughnut",
     data: {
       labels: statusLabels,
       datasets: [{
-        data: statusValues
+        data: statusValues,
+        backgroundColor: statusColors,
+        borderWidth: 0,
+        hoverOffset: 4
       }]
     },
     options: {
       responsive: true,
-      maintainAspectRatio: false
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'bottom' }
+      },
+      cutout: '70%'
     }
   });
 
