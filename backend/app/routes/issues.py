@@ -282,3 +282,109 @@ def leaderboard():
     except Exception:
         flash("Error loading leaderboard.", "danger")
         return redirect(url_for("main.index"))
+
+
+@issues_bp.route("/my")
+@login_required
+def my_issues():
+    try:
+        filter_type = request.args.get('filter', 'all')
+        
+        if filter_type == 'pending':
+            issues = Issue.objects(user=current_user.id, status__ne='Resolved').order_by('-created_at')
+        elif filter_type == 'resolved':
+            issues = Issue.objects(user=current_user.id, status__in=['Resolved', 'Resolved (Unconfirmed)']).order_by('-created_at')
+        else:
+            issues = Issue.objects(user=current_user.id).order_by('-created_at')
+        
+        pending_count = Issue.objects(user=current_user.id, status='Pending').count()
+        in_progress_count = Issue.objects(user=current_user.id, status='In Progress').count()
+        resolved_count = Issue.objects(user=current_user.id, status__in=['Resolved', 'Resolved (Unconfirmed)']).count()
+        
+        return render_template("citizen_dashboard.html", 
+                             my_issues=issues,
+                             my_issues_status={
+                                 'pending': pending_count,
+                                 'in_progress': in_progress_count,
+                                 'resolved': resolved_count
+                             },
+                             filter=filter_type)
+    except Exception as e:
+        current_app.logger.error(f"Error loading my issues: {e}")
+        flash("Error loading your issues.", "danger")
+        return redirect(url_for("main.index"))
+
+
+@issues_bp.route("/issue/<issue_id>")
+@login_required
+def issue_detail(issue_id):
+    try:
+        issue = Issue.objects(id=issue_id).first()
+        if not issue:
+            flash("Issue not found.", "danger")
+            return redirect(url_for("issues.view_issues"))
+        
+        has_voted = Upvote.objects(user=current_user.id, issue=issue.id).first()
+        issue.has_upvoted = bool(has_voted)
+        
+        similar_issues = []
+        if issue.embedding:
+            try:
+                from ..utils.duplicate_detector import cosine_similarity, json_to_embed
+                emb = json_to_embed(issue.embedding)
+                if emb:
+                    recent = Issue.objects(embedding__ne=None).exclude('id', issue.id).limit(20)
+                    scores = []
+                    for sim_issue in recent:
+                        try:
+                            sim_emb = json_to_embed(sim_issue.embedding)
+                            if sim_emb:
+                                score = cosine_similarity(emb, sim_emb)
+                                if score >= 0.7:
+                                    scores.append((score, sim_issue))
+                        except: continue
+                    scores.sort(reverse=True)
+                    similar_issues = [s[1] for s in scores[:3]]
+            except: pass
+        
+        duplicates = Issue.objects(is_duplicate_of=issue.id)
+        
+        return render_template("issue_detail.html", 
+                             issue=issue, 
+                             similar_issues=similar_issues,
+                             duplicates=duplicates)
+    except Exception as e:
+        current_app.logger.error(f"Error loading issue detail: {e}")
+        flash("Error loading issue details.", "danger")
+        return redirect(url_for("issues.view_issues"))
+
+
+@issues_bp.route("/view")
+@login_required
+def view_issues_filtered():
+    status_filter = request.args.get('status', '')
+    severity_filter = request.args.get('severity', '')
+    search_query = request.args.get('search', '')
+    
+    try:
+        issues = Issue.objects.order_by('-created_at')
+        
+        if status_filter:
+            issues = issues.filter(status=status_filter.replace('+', ' '))
+        
+        if severity_filter:
+            issues = issues.filter(severity=severity_filter)
+        
+        if search_query:
+            issues = issues.filter(issue__icontains=search_query)
+        
+        voted_ids = {str(upvote.issue.id) for upvote in Upvote.objects(user=current_user.id)}
+        
+        for issue in issues:
+            issue.has_upvoted = str(issue.id) in voted_ids
+        
+        return render_template("view_issues.html", issues=issues)
+    except Exception as e:
+        current_app.logger.error(f"Error viewing issues: {e}")
+        flash("Error loading issues.", "danger")
+        return render_template("downtime.html")

@@ -1,0 +1,284 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="container mt-4">
+  <!-- Breadcrumb -->
+  <nav class="mb-3">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="{{ url_for('main.index') }}">Home</a></li>
+      <li class="breadcrumb-item"><a href="{{ url_for('issues.view_issues') }}">Issues</a></li>
+      <li class="breadcrumb-item active">Issue Details</li>
+    </ol>
+  </nav>
+
+  <div class="row g-4">
+    <!-- Main Content -->
+    <div class="col-lg-8">
+      
+      <!-- Issue Header -->
+      <div class="card border-0 rounded-4 shadow-sm mb-4">
+        <div class="card-body p-4">
+          {% if issue.file %}
+          <img src="{{ url_for('static', filename=issue.file) }}" 
+               alt="Issue image" 
+               class="img-fluid rounded-3 mb-4" 
+               style="max-height: 300px; width: 100%; object-fit: cover;">
+          {% endif %}
+          
+          <div class="d-flex justify-content-between align-items-start mb-3">
+            <h2 class="fw-bold mb-0">{{ issue.issue }}</h2>
+            <span class="badge rounded-pill bg-{{ 'success' if 'Resolved' in issue.status else 'warning text-dark' if issue.status == 'In Progress' else 'danger' }} fs-6">
+              {{ issue.status }}
+            </span>
+          </div>
+          
+          <p class="text-muted mb-4">
+            <i class="bi bi-geo-alt me-2"></i>{{ issue.location }}
+            {% if issue.latitude and issue.longitude %}
+            <span class="ms-2 text-muted">({{ "%.4f"|format(issue.latitude) }}, {{ "%.4f"|format(issue.longitude) }})</span>
+            {% endif %}
+          </p>
+
+          <div class="d-flex flex-wrap gap-2 mb-3">
+            {% if issue.category %}
+            <span class="badge bg-primary bg-opacity-10 text-primary">
+              <i class="bi bi-tag me-1"></i>{{ issue.category }}
+            </span>
+            {% endif %}
+            <span class="badge bg-{{ 'danger' if issue.severity == 'High' else 'warning text-dark' if issue.severity == 'Medium' else 'success' }}">
+              <i class="bi bi-exclamation-triangle me-1"></i>{{ issue.severity or 'Low' }} Severity
+            </span>
+            <span class="badge bg-info bg-opacity-10 text-info">
+              <i class="bi bi-person me-1"></i>Reported by {{ issue.name }}
+            </span>
+          </div>
+
+          <!-- Quick Actions -->
+          <div class="d-flex flex-wrap gap-2">
+            {% if current_user.is_authenticated %}
+            <button class="btn upvote-btn {% if issue.has_upvoted %}upvoted{% endif %}" data-issue-id="{{ issue.id }}">
+              <i class="bi bi-star-fill"></i>
+              <span class="ms-1">{{ issue.upvotes }} Upvotes</span>
+            </button>
+            {% endif %}
+            
+            {% if issue.assigned_to %}
+            <a href="{{ url_for('chat.chat_with', user_id=1) }}" class="btn btn-outline-primary">
+              <i class="bi bi-chat-dots me-1"></i>Message Officer
+            </a>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+      <!-- Status Timeline -->
+      <div class="card border-0 rounded-4 shadow-sm mb-4">
+        <div class="card-body p-4">
+          <h5 class="fw-bold mb-4"><i class="bi bi-clock-history me-2"></i>Status Timeline</h5>
+          
+          <div class="timeline">
+            <!-- Step 1: Reported -->
+            <div class="timeline-item active">
+              <div class="timeline-marker bg-success"></div>
+              <div class="timeline-content">
+                <h6 class="fw-bold mb-1">Issue Reported</h6>
+                <p class="text-muted small mb-0">{{ issue.created_at.strftime('%B %d, %Y at %H:%M') if issue.created_at else 'N/A' }}</p>
+              </div>
+            </div>
+
+            <!-- Step 2: In Progress (if applicable) -->
+            {% if issue.status in ['In Progress', 'Resolved', 'Resolved (Unconfirmed)'] %}
+            <div class="timeline-item active">
+              <div class="timeline-marker bg-info"></div>
+              <div class="timeline-content">
+                <h6 class="fw-bold mb-1">Under Review</h6>
+                <p class="text-muted small mb-0">Issue assigned to {{ issue.assigned_to or 'Authority' }}</p>
+              </div>
+            </div>
+            {% endif %}
+
+            <!-- Step 3: Resolved (if applicable) -->
+            {% if issue.status in ['Resolved', 'Resolved (Unconfirmed)'] %}
+            <div class="timeline-item {% if issue.status == 'Resolved' %}active{% endif %}">
+              <div class="timeline-marker {% if issue.status == 'Resolved' %}bg-success{% else %}bg-warning{% endif %}"></div>
+              <div class="timeline-content">
+                <h6 class="fw-bold mb-1">
+                  {% if issue.status == 'Resolved' %}
+                  <i class="bi bi-check-circle-fill text-success me-1"></i>Resolved
+                  {% else %}
+                  <i class="bi bi-exclamation-circle text-warning me-1"></i>Awaiting Confirmation
+                  {% endif %}
+                </h6>
+                {% if issue.resolved_at %}
+                <p class="text-muted small mb-0">{{ issue.resolved_at.strftime('%B %d, %Y') }}</p>
+                {% endif %}
+              </div>
+            </div>
+            {% endif %}
+
+            <!-- If pending -->
+            {% if issue.status == 'Pending' %}
+            <div class="timeline-item">
+              <div class="timeline-marker bg-secondary"></div>
+              <div class="timeline-content">
+                <h6 class="fw-bold mb-1 text-muted">Under Review</h6>
+                <p class="text-muted small mb-0">Waiting for authority action</p>
+              </div>
+            </div>
+            {% endif %}
+          </div>
+
+          <!-- Confirm Resolution (if applicable) -->
+          {% if issue.status == 'Resolved (Unconfirmed)' and issue.user_id == current_user.id %}
+          <div class="alert alert-success mt-4">
+            <i class="bi bi-check-circle me-2"></i>
+            <strong>This issue has been resolved!</strong> Please confirm if the solution is satisfactory.
+            <form action="{{ url_for('issues.confirm_resolve', issue_id=issue.id) }}" method="POST" class="d-inline ms-3">
+              <button type="submit" class="btn btn-success btn-sm">
+                <i class="bi bi-check-lg me-1"></i>Confirm Resolution
+              </button>
+            </form>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Similar Issues -->
+      {% if similar_issues %}
+      <div class="card border-0 rounded-4 shadow-sm">
+        <div class="card-body p-4">
+          <h5 class="fw-bold mb-3"><i class="bi bi-diagram-3 me-2"></i>Similar Issues Nearby</h5>
+          <div class="row g-3">
+            {% for sim in similar_issues[:3] %}
+            <div class="col-md-4">
+              <a href="{{ url_for('issues.issue_detail', issue_id=sim.id) }}" class="text-decoration-none">
+                <div class="card border-0 bg-light h-100">
+                  <div class="card-body">
+                    <p class="text-dark mb-1 small">{{ sim.issue[:50] }}...</p>
+                    <span class="badge bg-{{ 'success' if 'Resolved' in sim.status else 'warning' }}">
+                      {{ sim.status }}
+                    </span>
+                    <small class="text-muted d-block mt-1">
+                      <i class="bi bi-geo-alt"></i> {{ sim.location[:25] }}...
+                    </small>
+                  </div>
+                </div>
+              </a>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+      {% endif %}
+
+    </div>
+
+    <!-- Sidebar -->
+    <div class="col-lg-4">
+      
+      <!-- Issue Info -->
+      <div class="card border-0 rounded-4 shadow-sm mb-4">
+        <div class="card-body p-4">
+          <h5 class="fw-bold mb-3"><i class="bi bi-info-circle me-2"></i>Details</h5>
+          
+          <div class="mb-3">
+            <small class="text-muted d-block">Category</small>
+            <span class="fw-semibold">{{ issue.category or 'Uncategorized' }}</span>
+          </div>
+          
+          <div class="mb-3">
+            <small class="text-muted d-block">Severity</small>
+            <span class="fw-semibold text-{{ 'danger' if issue.severity == 'High' else 'warning' if issue.severity == 'Medium' else 'success' }}">
+              {{ issue.severity or 'Low' }}
+            </span>
+          </div>
+          
+          <div class="mb-3">
+            <small class="text-muted d-block">Assigned To</small>
+            <span class="fw-semibold">{{ issue.assigned_to or 'Not assigned yet' }}</span>
+          </div>
+          
+          <div class="mb-3">
+            <small class="text-muted d-block">Reported On</small>
+            <span class="fw-semibold">{{ issue.created_at.strftime('%B %d, %Y') if issue.created_at else 'N/A' }}</span>
+          </div>
+          
+          <div class="mb-0">
+            <small class="text-muted d-block">Confidence Score</small>
+            <div class="progress mt-1" style="height: 8px;">
+              <div class="progress-bar bg-primary" style="width: {{ issue.confidence or 0 }}%"></div>
+            </div>
+            <small class="text-muted">{{ "%.0f"|format(issue.confidence or 0) }}% AI Confidence</small>
+          </div>
+        </div>
+      </div>
+
+      <!-- Related Issues -->
+      <div class="card border-0 rounded-4 shadow-sm">
+        <div class="card-body p-4">
+          <h5 class="fw-bold mb-3"><i class="bi bi-link-45deg me-2"></i>Related</h5>
+          
+          {% if issue.is_duplicate_of %}
+          <div class="mb-3">
+            <small class="text-muted d-block">Linked to</small>
+            <a href="#" class="fw-semibold">View Original Issue</a>
+          </div>
+          {% endif %}
+          
+          {% if duplicates %}
+          <small class="text-muted d-block">Duplicates linked</small>
+          {% for dup in duplicates %}
+          <a href="#" class="d-block py-2 border-bottom">
+            <small>{{ dup.issue[:40] }}...</small>
+          </a>
+          {% endfor %}
+          {% else %}
+          <p class="text-muted small mb-0">No related issues found</p>
+          {% endif %}
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<style>
+.timeline {
+  position: relative;
+  padding-left: 30px;
+}
+.timeline::before {
+  content: '';
+  position: absolute;
+  left: 7px;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: #e9ecef;
+}
+.timeline-item {
+  position: relative;
+  padding-bottom: 20px;
+}
+.timeline-item:last-child {
+  padding-bottom: 0;
+}
+.timeline-marker {
+  position: absolute;
+  left: -26px;
+  top: 0;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  box-shadow: 0 0 0 2px #e9ecef;
+}
+.timeline-item.active .timeline-marker {
+  box-shadow: 0 0 0 2px #198754;
+}
+.timeline-content {
+  padding-left: 10px;
+}
+</style>
+
+{% endblock %}

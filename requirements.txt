@@ -20,8 +20,3 @@ Authlib
 cryptography
 sentence-transformers
 openai
-firebase-admin
-PyJWT
-ollama
-opencv-python
-joblib

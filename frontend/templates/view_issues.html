@@ -1,10 +1,69 @@
 {% extends "base.html" %}
 {% block content %}
 
-<div class="container mt-5 mb-5">
-    <div class="text-center mb-5">
-        <h2 class="display-5 fw-bold text-gradient mb-2">Explore Reported Issues</h2>
-        <p class="text-muted fs-5">Community verified issues affecting your city.</p>
+<div class="container mt-4 mb-5">
+    
+    <!-- Header with Search -->
+    <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3 mb-4">
+        <div>
+            <h2 class="fw-bold mb-1">
+                <i class="bi bi-card-list text-primary me-2"></i>All Issues
+            </h2>
+            <p class="text-muted mb-0">{{ issues|length }} issues found</p>
+        </div>
+        
+        <!-- Search & Filter Bar -->
+        <div class="d-flex gap-2">
+            <form method="GET" action="{{ url_for('issues.view_issues') }}" class="d-flex">
+                <input type="text" name="search" class="form-control" 
+                       placeholder="Search issues..." 
+                       value="{{ request.args.get('search', '') }}"
+                       style="border-radius: 50rem 0 0 50rem;">
+                <button type="submit" class="btn btn-primary" style="border-radius: 0 50rem 50rem 0;">
+                    <i class="bi bi-search"></i>
+                </button>
+            </form>
+            <div class="dropdown">
+                <button class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown">
+                    <i class="bi bi-funnel me-1"></i>Filter
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end">
+                    <li><a class="dropdown-item" href="{{ url_for('issues.view_issues') }}">All Issues</a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><h6 class="dropdown-header">By Status</h6></li>
+                    <li><a class="dropdown-item" href="{{ url_for('issues.view_issues') }}?status=Pending">Pending</a></li>
+                    <li><a class="dropdown-item" href="{{ url_for('issues.view_issues') }}?status=In+Progress">In Progress</a></li>
+                    <li><a class="dropdown-item" href="{{ url_for('issues.view_issues') }}?status=Resolved">Resolved</a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><h6 class="dropdown-header">By Severity</h6></li>
+                    <li><a class="dropdown-item" href="{{ url_for('issues.view_issues') }}?severity=High">High</a></li>
+                    <li><a class="dropdown-item" href="{{ url_for('issues.view_issues') }}?severity=Medium">Medium</a></li>
+                    <li><a class="dropdown-item" href="{{ url_for('issues.view_issues') }}?severity=Low">Low</a></li>
+                </ul>
+            </div>
+            <a href="{{ url_for('main.issue_map') }}" class="btn btn-outline-success">
+                <i class="bi bi-map me-1"></i>Map
+            </a>
+        </div>
+    </div>
+
+    <!-- Quick Filter Pills -->
+    <div class="d-flex flex-wrap gap-2 mb-4">
+        <a href="{{ url_for('issues.view_issues') }}" class="btn btn-sm {% if not request.args.get('status') %}btn-primary{% else %}btn-outline-secondary{% endif %}">
+            All
+        </a>
+        <a href="{{ url_for('issues.view_issues') }}?status=Pending" class="btn btn-sm {% if request.args.get('status') == 'Pending' %}btn-warning{% else %}btn-outline-warning{% endif %}">
+            <i class="bi bi-clock me-1"></i>Pending
+        </a>
+        <a href="{{ url_for('issues.view_issues') }}?status=In+Progress" class="btn btn-sm {% if request.args.get('status') == 'In+Progress' %}btn-info{% else %}btn-outline-info{% endif %}">
+            <i class="bi bi-arrow-repeat me-1"></i>In Progress
+        </a>
+        <a href="{{ url_for('issues.view_issues') }}?status=Resolved" class="btn btn-sm {% if request.args.get('status') == 'Resolved' %}btn-success{% else %}btn-outline-success{% endif %}">
+            <i class="bi bi-check-circle me-1"></i>Resolved
+        </a>
+        <a href="{{ url_for('issues.trending_issues') }}" class="btn btn-sm btn-outline-danger">
+            <i class="bi bi-fire me-1"></i>Trending
+        </a>
     </div>
 
     {% if issues %}
@@ -31,7 +90,11 @@
                     <div class="flex-grow-1">
                         <div class="d-flex align-items-start gap-3 mb-2">
                             <div class="flex-grow-1">
-                                <h4 class="card-title fw-bold mb-1">{{ issue.issue }}</h4>
+                                <h4 class="card-title fw-bold mb-1">
+                                    <a href="{{ url_for('issues.issue_detail', issue_id=issue.id) }}" class="text-decoration-none text-dark">
+                                        {{ issue.issue }}
+                                    </a>
+                                </h4>
                                 <p class="card-text text-muted mb-3 fs-6">
                                     <i class="bi bi-geo-alt-fill text-danger me-1"></i> {{ issue.location }}
                                 </p>
