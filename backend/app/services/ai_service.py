@@ -27,6 +27,7 @@ class CivicAIAnalyzer:
     def __init__(self, text_model=None, yolo_model=None):
         self.text_model = text_model or Config.OLLAMA_MODEL
         self.yolo_model = yolo_model or Config.YOLO_MODEL_PATH
+        self.conf_threshold = Config.YOLO_CONF_THRESHOLD
         
         print(f"🚀 Civic AI Analyzer initialized with Ollama model: {self.text_model}")
         print(f"🔥 Loading YOLO model from: {self.yolo_model}")
@@ -67,7 +68,7 @@ class CivicAIAnalyzer:
                 label = r.names[cls_id]
                 confidence = float(box.conf[0])
                 
-                if confidence > 0.3:
+                if confidence > Config.YOLO_CONF_THRESHOLD:
                     detected_objects.append({
                         'label': label,
                         'confidence': round(confidence * 100, 1)

@@ -22,6 +22,7 @@ class Config:
     # AI Models
     OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "llama3")
     YOLO_MODEL_PATH = os.path.join(BASE_DIR, "models_ai", "last_jansuvidha.pt")
+    YOLO_CONF_THRESHOLD = float(os.getenv("YOLO_CONF_THRESHOLD", 0.4))
 
     # Firebase Settings
     FIREBASE_API_KEY = os.getenv("FIREBASE_API_KEY", "")
