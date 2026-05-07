@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="row pt-5 align-items-center">
+    <div class="col-lg-6">
+        <h1 class="display-3 fw-bold text-primary mb-4">Empowering <span class="text-dark">Citizens</span>, Transforming Cities.</h1>
+        <p class="lead text-muted mb-5 fs-4">
+            Jan Suvidha is the next-generation civic engagement platform using AI to bridge the gap between people and progress.
+        </p>
+        <div class="d-flex gap-3 mb-5">
+            <a href="{{ url_for('issues.report_issue') }}" class="btn btn-primary btn-lg shadow">
+                <i class="bi bi-megaphone-fill me-2"></i> Report Now
+            </a>
+            <a href="{{ url_for('issues.view_issues') }}" class="btn btn-outline-dark btn-lg">
+                Explore Issues
+            </a>
+        </div>
+    </div>
+    <div class="col-lg-6 d-none d-lg-block text-center">
+        <div class="p-5 bg-white rounded-5 shadow-lg border-bottom border-5 border-primary">
+            <h2 class="display-1 fw-bold text-primary mb-0">98%</h2>
+            <p class="text-muted fw-bold text-uppercase tracking-widest">Resolution Rate</p>
+            <hr class="my-4">
+            <div class="row">
+                <div class="col-6">
+                    <h4 class="fw-bold fs-2">1.2k</h4>
+                    <p class="text-muted small">Issues Fixed</p>
+                </div>
+                <div class="col-6">
+                    <h4 class="fw-bold fs-2">5k+</h4>
+                    <p class="text-muted small">Active Citizens</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row py-5 mt-5">
+    <div class="text-center mb-5">
+        <h2 class="fw-bold">How Jan Suvidha Works</h2>
+        <p class="text-muted">A seamless, AI-powered loop of accountability.</p>
+    </div>
+    <div class="col-md-3 text-center px-4">
+        <div class="fs-1 text-primary mb-3"><i class="bi bi-camera-fill"></i></div>
+        <h5 class="fw-bold">Report</h5>
+        <p class="small text-muted">Capture and upload with AI auto-categorization.</p>
+    </div>
+    <div class="col-md-3 text-center px-4">
+        <div class="fs-1 text-primary mb-3"><i class="bi bi-shield-check"></i></div>
+        <h5 class="fw-bold">Validate</h5>
+        <p class="small text-muted">Community upvotes verify and prioritize needs.</p>
+    </div>
+    <div class="col-md-3 text-center px-4">
+        <div class="fs-1 text-primary mb-3"><i class="bi bi-tools"></i></div>
+        <h5 class="fw-bold">Resolve</h5>
+        <p class="small text-muted">Authorities track and act on verified reports.</p>
+    </div>
+    <div class="col-md-3 text-center px-4">
+        <div class="fs-1 text-primary mb-3"><i class="bi bi-check-all"></i></div>
+        <h5 class="fw-bold">Confirm</h5>
+        <p class="small text-muted">Closing the loop with citizen-confirmed resolution.</p>
+    </div>
+</div>
+
+{% endblock %}

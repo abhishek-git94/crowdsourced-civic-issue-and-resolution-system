@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{{ url_for('forum.index') }}">Forum</a></li>
+                <li class="breadcrumb-item active">New Post</li>
+            </ol>
+        </nav>
+        
+        <div class="card shadow-sm border-0">
+            <div class="card-body p-4">
+                <h2 class="mb-4">Start a Discussion</h2>
+                <form action="{{ url_for('forum.new_post') }}" method="POST">
+                    <div class="mb-3">
+                        <label for="title" class="form-label fw-bold">Title</label>
+                        <input type="text" class="form-control" id="title" name="title" placeholder="What's on your mind?" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="content" class="form-label fw-bold">Content</label>
+                        <textarea class="form-control" id="content" name="content" rows="6" placeholder="Describe the topic or share your thoughts..." required></textarea>
+                    </div>
+                    <div class="d-grid mt-4">
+                        <button type="submit" class="btn btn-primary btn-lg">Publish Post</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

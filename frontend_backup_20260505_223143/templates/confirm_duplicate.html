@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container mt-4">
+  <h3>Possible duplicate found</h3>
+  <p class="text-muted">We found similar reports — choose whether to link or create a new report.</p>
+
+  {% if explanation %}
+    <div class="alert alert-info">
+      <strong>AI explanation:</strong> {{ explanation }}
+    </div>
+  {% endif %}
+
+  <div class="list-group mb-3">
+    {% for c in candidates %}
+      <div class="list-group-item">
+        <div class="d-flex justify-content-between">
+          <div>
+            <strong>#{{ c.id }}</strong> — {{ c.issue[:150] }}...
+            <div class="small text-muted">{{ c.location }} • Upvotes: {{ c.upvotes }}</div>
+          </div>
+          <div class="text-end">
+            <div class="mb-1">Similarity: <strong>{{ c.similarity }}</strong></div>
+            <form method="post" action="{{ url_for('confirm_link') }}" style="display:inline">
+              <input type="hidden" name="link_to" value="{{ c.id }}">
+              <button class="btn btn-outline-primary btn-sm">Link to this</button>
+            </form>
+          </div>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+
+  <form method="post" action="{{ url_for('force_create') }}">
+    <button class="btn btn-success">Create Anyway</button>
+    <a class="btn btn-secondary" href="{{ url_for('report_issue') }}">Cancel</a>
+  </form>
+</div>
+{% endblock %}

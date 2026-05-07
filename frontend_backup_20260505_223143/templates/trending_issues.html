@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h3 class="fw-bold text-primary mb-3">Trending Issues</h3>
+<p class="text-muted">Most upvoted issues across the city</p>
+
+{% if issues|length == 0 %}
+<div class="alert alert-info text-center">
+  No trending issues yet.
+</div>
+{% endif %}
+
+<div class="row g-3">
+
+  {% for i in issues %}
+  <div class="col-md-6 col-lg-4">
+    <div class="card shadow-sm h-100 border-0">
+
+      <div class="card-body">
+
+        <!-- Title -->
+        <h5 class="card-title fw-semibold">
+          {{ i.issue[:70] }}{% if i.issue|length > 70 %}...{% endif %}
+        </h5>
+
+        <!-- Location & Time -->
+        <p class="small text-muted mb-2">
+           {{ i.location }} <br>
+           {{ i.created_at.strftime('%Y-%m-%d %H:%M') }}
+        </p>
+
+        <!-- Photo -->
+        {% if i.file %}
+        <img src="{{ url_for('static', filename=i.file) }}" 
+             class="img-fluid rounded mb-3 issue-photo" />
+        {% endif %}
+
+        <!-- Description -->
+        <p class="text-secondary">
+          {{ i.issue[:150] }}{% if i.issue|length > 150 %}...{% endif %}
+        </p>
+
+      </div>
+
+      <div class="card-footer bg-light d-flex justify-content-between align-items-center">
+
+        <!-- Upvotes -->
+        <span class="badge bg-success px-3 py-2">
+           {{ i.upvotes }} Upvotes
+        </span>
+
+        <!-- View Photo -->
+        {% if i.file %}
+        <a href="{{ url_for('static', filename=i.file) }}" 
+           class="btn btn-sm btn-outline-primary" target="_blank">
+          View Photo
+        </a>
+        {% endif %}
+
+      </div>
+
+    </div>
+  </div>
+  {% endfor %}
+
+</div>
+
+{% endblock %}
