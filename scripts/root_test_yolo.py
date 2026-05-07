@@ -3,29 +3,29 @@ import requests
 from PIL import Image
 
 print("=" * 60)
-print("🧪 TESTING YOLO")
+print("TESTING YOLO")
 print("=" * 60)
 
 # Step 1: Load YOLO
-print("\n📦 Loading YOLO model...")
+print("\nLoading YOLO model...")
 model = YOLO('yolov8n.pt')
-print("✅ YOLO loaded!")
+print("YOLO loaded!")
 
 # Step 2: Download test image
-print("\n📥 Downloading test image...")
+print("\nDownloading test image...")
 img_url = "https://ultralytics.com/images/bus.jpg"
 response = requests.get(img_url)
 with open('test_bus.jpg', 'wb') as f:
     f.write(response.content)
-print("✅ Test image downloaded!")
+print("Test image downloaded!")
 
 # Step 3: Run detection
-print("\n🔍 Running detection...")
+print("\nRunning detection...")
 results = model('test_bus.jpg')
-print("✅ Detection complete!")
+print("Detection complete!")
 
 # Step 4: Show results
-print("\n📊 DETECTION RESULTS:")
+print("\nDETECTION RESULTS:")
 print("-" * 60)
 
 for result in results:
@@ -43,5 +43,5 @@ for result in results:
         print()
 
 print("=" * 60)
-print("🎉 YOLO is working perfectly!")
+print("YOLO is working perfectly!")
 print("=" * 60)

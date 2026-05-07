@@ -85,4 +85,3 @@ def create_app(config_class=Config):
     # Base.metadata.create_all(bind=engine)
 
     return app
-

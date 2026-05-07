@@ -11,18 +11,32 @@
     <div class="stagger-fade">
         {% for issue in issues %}
         <div class="card mb-4 issue-card shadow-sm border-0 rounded-4 {% if 'Resolved' in issue.status %}resolved{% elif issue.severity == 'High' %}critical{% endif %}">
-            <div class="card-body p-4 d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-4">
+            <div class="card-body p-4">
 
-                <!-- LEFT SIDE: Issue Info -->
-                <div class="flex-grow-1">
-                    <div class="d-flex align-items-start gap-3 mb-2">
-                        <div class="flex-grow-1">
-                            <h4 class="card-title fw-bold mb-1">{{ issue.issue }}</h4>
-                            <p class="card-text text-muted mb-3 fs-6">
-                                <i class="bi bi-geo-alt-fill text-danger me-1"></i> {{ issue.location }}
-                            </p>
+                <!-- IMAGE (if exists) -->
+                {% if issue.file %}
+                <div class="mb-3">
+                    <img src="{{ url_for('static', filename=issue.file) }}" 
+                         alt="Issue image" 
+                         class="rounded-3" 
+                         style="max-height: 200px; max-width: 100%; object-fit: cover; cursor: pointer;"
+                         data-bs-toggle="modal" 
+                         data-bs-target="#imageModal{{ loop.index }}">
+                </div>
+                {% endif %}
+
+                <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-start gap-4">
+                    
+                    <!-- LEFT SIDE: Issue Info -->
+                    <div class="flex-grow-1">
+                        <div class="d-flex align-items-start gap-3 mb-2">
+                            <div class="flex-grow-1">
+                                <h4 class="card-title fw-bold mb-1">{{ issue.issue }}</h4>
+                                <p class="card-text text-muted mb-3 fs-6">
+                                    <i class="bi bi-geo-alt-fill text-danger me-1"></i> {{ issue.location }}
+                                </p>
+                            </div>
                         </div>
-                    </div>
 
                     <div class="d-flex flex-wrap gap-2 mb-3">
                         <span class="status-badge {% if 'Resolved' in issue.status %}status-resolved{% elif issue.status == 'In Progress' %}status-progress{% elif issue.status == 'Linked' %}status-linked{% else %}status-pending{% endif %}">
@@ -100,6 +114,28 @@
         </div>
     {% endif %}
 </div>
+
+<!-- IMAGE MODALS -->
+{% for issue in issues %}
+{% if issue.file %}
+<div class="modal fade" id="imageModal{{ loop.index }}" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content bg-transparent border-0">
+      <div class="modal-body p-0 text-center">
+        <button type="button" class="btn-close btn-close-white position-absolute top-0 end-0 m-3" data-bs-dismiss="modal"></button>
+        <img src="{{ url_for('static', filename=issue.file) }}" 
+             alt="Issue image" 
+             class="img-fluid rounded shadow-lg" 
+             style="max-height: 85vh; max-width: 100%;">
+        <div class="text-white mt-3">
+            <small>{{ issue.issue }}</small>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
+{% endfor %}
 
 
 
@@ -179,6 +215,26 @@
 
 .upvote-btn.pop {
   animation: upvote-pop 0.18s ease-out;
+}
+
+/* Image thumbnail styling */
+.issue-card img[rounded-3] {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.issue-card img[rounded-3]:hover {
+    transform: scale(1.02);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+}
+
+/* Fullscreen image modal */
+#imageModal .modal-content {
+    background: rgba(0,0,0,0.9);
+}
+#imageModal .modal-body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
 }
 </style>
 

@@ -29,12 +29,12 @@ class CivicNLPClassifier:
             try:
                 self.pipeline = joblib.load(self.model_path)
                 self.is_trained = True
-                print("✅ SVM Model loaded successfully.")
+                print("SVM Model loaded successfully.")
                 return
             except Exception as e:
-                print(f"⚠️ Failed to load SVM model: {e}")
+                print(f"Failed to load SVM model: {e}")
         
-        print("⚙️ Training new SVM Model with expanded dataset...")
+        print("Training new SVM Model with expanded dataset...")
         self.pipeline = Pipeline([
             ('tfidf', TfidfVectorizer(stop_words='english', ngram_range=(1, 2))),
             ('clf', SVC(probability=True, kernel='linear', C=1.0))
@@ -73,9 +73,9 @@ class CivicNLPClassifier:
         try:
             os.makedirs(os.path.dirname(self.model_path), exist_ok=True)
             joblib.dump(self.pipeline, self.model_path)
-            print("✅ SVM Model trained and saved.")
+            print("SVM Model trained and saved.")
         except Exception as e:
-            print(f"⚠️ Could not save SVM model: {e}")
+            print(f"Could not save SVM model: {e}")
 
     def predict_severity(self, text):
         if not text:
@@ -100,12 +100,12 @@ class CivicRNNPredictor:
             try:
                 self.model = load_model(self.model_path)
                 self.is_trained = True
-                print("✅ LSTM RNN Model loaded successfully.")
+                print("LSTM RNN Model loaded successfully.")
                 return
             except Exception as e:
-                print(f"⚠️ Failed to load LSTM model: {e}")
+                print(f"Failed to load LSTM model: {e}")
         
-        print("⚙️ Training new LSTM RNN Model...")
+        print("Training new LSTM RNN Model...")
         
         # Create a simple synthetic sequential dataset
         # X: sequence of past resolution times (normalized 0-1)
@@ -126,9 +126,9 @@ class CivicRNNPredictor:
         try:
             os.makedirs(os.path.dirname(self.model_path), exist_ok=True)
             self.model.save(self.model_path)
-            print("✅ LSTM Model trained and saved.")
+            print("LSTM Model trained and saved.")
         except Exception as e:
-            print(f"⚠️ Could not save LSTM model: {e}")
+            print(f"Could not save LSTM model: {e}")
 
     def predict_resolution_days(self, issue_type, location_history):
         """
@@ -159,7 +159,7 @@ class CivicRNNPredictor:
             pred_days = pred_norm * max_days
             return max(1, round(pred_days))
         except Exception as e:
-            print(f"⚠️ RNN Prediction error: {e}")
+            print(f"RNN Prediction error: {e}")
             return default_days
 
 # Singleton instances

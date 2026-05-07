@@ -9,9 +9,9 @@ def _get_sentence_model():
         try:
             from sentence_transformers import SentenceTransformer
             SENTENCE_MODEL = SentenceTransformer('all-MiniLM-L6-v2')
-            print("✅ Sentence Transformer model loaded")
+            print("Sentence Transformer model loaded")
         except Exception as e:
-            print(f"⚠️ Failed to load sentence transformer: {e}")
+            print(f"Failed to load sentence transformer: {e}")
             SENTENCE_MODEL = False
     return SENTENCE_MODEL
 
@@ -24,7 +24,7 @@ def get_local_embedding(text: str):
             embedding = model.encode(text, convert_to_numpy=True)
             return embedding.tolist()
         except Exception as e:
-            print(f"⚠️ Embedding encoding failed: {e}")
+            print(f"Embedding encoding failed: {e}")
     return np.random.rand(384).tolist()
 
 
@@ -51,7 +51,7 @@ def get_openai_embedding(text: str):
         )
         return response.data[0].embedding
     except Exception as e:
-        print(f"⚠️ OpenAI embedding failed: {e}")
+        print(f"OpenAI embedding failed: {e}")
         return get_local_embedding(text)
 
 

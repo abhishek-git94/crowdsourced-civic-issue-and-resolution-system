@@ -29,8 +29,8 @@ class CivicAIAnalyzer:
         self.yolo_model = yolo_model or Config.YOLO_MODEL_PATH
         self.conf_threshold = Config.YOLO_CONF_THRESHOLD
         
-        print(f"🚀 Civic AI Analyzer initialized with Ollama model: {self.text_model}")
-        print(f"🔥 Loading YOLO model from: {self.yolo_model}")
+        print(f"Civic AI Analyzer initialized with Ollama model: {self.text_model}")
+        print(f"Loading YOLO model from: {self.yolo_model}")
 
         self.yolo = YOLO(self.yolo_model)
         
@@ -40,9 +40,9 @@ class CivicAIAnalyzer:
                 name="civic_issues",
                 metadata={"description": "Historical civic issues"}
             )
-            print("✅ RAG system initialized")
+            print("RAG system initialized")
         except Exception as e:
-            print(f"⚠️ RAG initialization failed: {e}")
+            print(f"RAG initialization failed: {e}")
             self.collection = None
         
         self.civic_mapping = {
@@ -105,7 +105,7 @@ class CivicAIAnalyzer:
                     similar_issues.append({'description': doc})
             return similar_issues
         except Exception as e:
-            print(f"⚠️ RAG search failed: {e}")
+            print(f"RAG search failed: {e}")
             return []
 
     def generate_description(self, objects, location="unknown location", category=None):
@@ -146,7 +146,7 @@ Write the description now:"""
             description = description.replace('**', '').replace('*', '').replace('\n\n', ' ').replace('\n', ' ')
             return description
         except Exception as e:
-            print(f"⚠️ Ollama error: {e}")
+            print(f"Ollama error: {e}")
             return f"A {category.replace('_', ' ')} issue has been detected at {location}. The image shows {object_summary}. Immediate attention recommended."
 
     def analyze_civic_issue(self, image_path, location="unknown location"):
@@ -194,4 +194,4 @@ Write the description now:"""
                 }]
             )
         except Exception as e:
-            print(f"⚠️ Failed to add to RAG: {e}")
+            print(f"Failed to add to RAG: {e}")

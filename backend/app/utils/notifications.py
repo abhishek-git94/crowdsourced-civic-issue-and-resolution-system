@@ -3,7 +3,7 @@ from flask import current_app
 
 def init_firebase():
     """Firebase is disabled for now."""
-    print("ℹ️ Firebase integration is disabled. Notifications will be simulated.")
+    print("Firebase integration is disabled. Notifications will be simulated.")
 
 def send_push_notification(fcm_token, title, body, data=None):
     """

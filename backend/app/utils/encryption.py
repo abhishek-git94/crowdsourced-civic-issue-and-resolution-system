@@ -26,5 +26,5 @@ def decrypt_message(encrypted_text: str) -> str:
         cipher = get_cipher()
         return cipher.decrypt(encrypted_text.encode()).decode()
     except Exception as e:
-        print(f"⚠️ Decryption failed: {e}")
+        print(f"Decryption failed: {e}")
         return "[Encrypted Content - Decryption Failed]"

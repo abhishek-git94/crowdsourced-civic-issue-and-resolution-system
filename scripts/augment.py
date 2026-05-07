@@ -58,4 +58,4 @@ for img_name in selected_images:
     if os.path.exists(label_path):
         shutil.copy(label_path, os.path.join(LABEL_DIR, new_label_name))
 
-print("✅ 50% Augmentation Completed Successfully!")
+print("50% Augmentation Completed Successfully!")
