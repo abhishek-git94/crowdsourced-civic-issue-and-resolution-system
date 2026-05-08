@@ -18,15 +18,27 @@ issues_bp = Blueprint("issues", __name__)
 ai_analyzer = CivicAIAnalyzer()
 
 @issues_bp.route("/view")
-@login_required
 def view_issues():
     try:
         issues = Issue.objects.order_by('-created_at')
-        voted_ids = {str(upvote.issue.id) for upvote in Upvote.objects(user=current_user.id)}
         
-        for issue in issues:
-            issue.has_upvoted = str(issue.id) in voted_ids
-            
+        # If request expects JSON (Mobile App)
+        if request.is_json or request.args.get('format') == 'json' or 'application/json' in request.headers.get('Accept', ''):
+            issue_list = []
+            for i in issues:
+                issue_list.append({
+                    "id": str(i.id),
+                    "issue": i.issue,
+                    "location": i.location,
+                    "latitude": i.latitude,
+                    "longitude": i.longitude,
+                    "status": i.status,
+                    "category": i.category,
+                    "severity": i.severity,
+                    "created_at": i.created_at.isoformat()
+                })
+            return jsonify({"success": True, "issues": issue_list})
+
         return render_template("view_issues.html", issues=issues)
     except Exception as e:
         current_app.logger.error(f"Error viewing issues: {e}")
@@ -96,9 +108,31 @@ def report_issue():
             file.save(full_path)
             file_path = f"uploads/{filename}"
 
+            # Get existing issues for duplicate detection and severity calculation
+            from ..models import Issue
+            existing_issues = Issue.objects()[:50]
+
             try:
-                analysis = ai_analyzer.analyze_civic_issue(full_path, location)
+                analysis = ai_analyzer.analyze_civic_issue(full_path, location, existing_issues, department=None)
                 issue_text = analysis.get("description", "") if isinstance(analysis, dict) else ""
+                
+                # Check if this is a duplicate based on AI analysis
+                if isinstance(analysis, dict) and analysis.get('duplicate_detected'):
+                    duplicate_id = analysis.get('duplicate_of')
+                    if duplicate_id:
+                        # Find the duplicate issue to show in confirmation
+                        dup_issue = Issue.objects(id=duplicate_id).first()
+                        if dup_issue:
+                            session["_pending_issue"] = {
+                                "name": name, "issue": issue_text, "location": location,
+                                "latitude": latitude, "longitude": longitude,
+                                "file_path": file_path, "analysis": analysis,
+                                "embedding": None
+                            }
+                            return render_template("confirm_duplicate.html", 
+                                candidates=[{"id": str(dup_issue.id), "issue": dup_issue.issue, 
+                                             "location": dup_issue.location, "similarity": 0.85}],
+                                pending=session["_pending_issue"])
             except Exception:
                 current_app.logger.exception("AI analyze error")
                 issue_text = request.form.get("issue", "")
@@ -165,8 +199,12 @@ def report_issue():
                 category=category,
                 confidence=(analysis.get("confidence") if isinstance(analysis, dict) else None),
                 severity=(analysis.get("severity") if isinstance(analysis, dict) else None),
+                priority=(analysis.get("priority") if isinstance(analysis, dict) else "Low"),
+                sentiment=(analysis.get("sentiment") if isinstance(analysis, dict) else None),
+                urgency_score=(analysis.get("urgency_score") if isinstance(analysis, dict) else None),
+                predicted_resolution_days=(analysis.get("predicted_resolution_days") if isinstance(analysis, dict) else None),
                 embedding=(embed_to_json(embedding) if embedding else None),
-                assigned_to=assigned_dept,
+                assigned_to=assigned_dept if assigned_dept else (analysis.get("assigned_department") if isinstance(analysis, dict) else 'Municipal Corporation'),
                 user=current_user.id
             )
             new_issue.save()
@@ -195,10 +233,15 @@ def confirm_link():
         return redirect(url_for("issues.report_issue"))
 
     try:
+        analysis = pending.get("analysis", {})
         new_issue = Issue(
             name=pending["name"], issue=pending["issue"], location=pending["location"],
             latitude=pending.get("latitude"), longitude=pending.get("longitude"),
             file=pending["file_path"], status="Linked", is_duplicate_of=link_to,
+            category=analysis.get("category"),
+            confidence=analysis.get("confidence"),
+            severity=analysis.get("severity"),
+            priority=analysis.get("priority", "Low"),
             embedding=pending.get("embedding"), user=current_user.id
         )
         new_issue.save()
@@ -217,11 +260,16 @@ def force_create():
         flash("Nothing to create.", "danger")
         return redirect(url_for("issues.report_issue"))
 
+    analysis = pending.get("analysis", {})
     try:
         new_issue = Issue(
             name=pending["name"], issue=pending["issue"], location=pending["location"],
             latitude=pending.get("latitude"), longitude=pending.get("longitude"),
             file=pending["file_path"], status="Pending",
+            category=analysis.get("category"),
+            confidence=analysis.get("confidence"),
+            severity=analysis.get("severity"),
+            priority=analysis.get("priority", "Low"),
             embedding=pending.get("embedding"), user=current_user.id
         )
         new_issue.save()

@@ -134,6 +134,8 @@ from ..utils.notifications import notify_status_change
 @role_required("admin")
 def update_status(issue_id):
     new_status = request.form.get("status")
+    new_severity = request.form.get("severity")
+    new_priority = request.form.get("priority")
     status_filter = request.form.get("status_filter", "all")
     try:
         issue = Issue.objects(id=issue_id).first()
@@ -141,21 +143,26 @@ def update_status(issue_id):
             flash("Issue not found.", "danger")
             return redirect(url_for("admin.issues", status=status_filter))
         
-        # Map "Resolved" to "Resolved (Unconfirmed)" to satisfy "No Fake Resolves"
-        if new_status == "Resolved":
-            new_status = "Resolved (Unconfirmed)"
+        if new_status:
+            if new_status == "Resolved":
+                new_status = "Resolved (Unconfirmed)"
+            issue.status = new_status
+        
+        if new_severity:
+            issue.severity = new_severity
+        
+        if new_priority:
+            issue.priority = new_priority
             
-        issue.status = new_status
         issue.save()
         
-        # Trigger push notification
         notify_status_change(issue)
         
     except Exception:
-        flash("Database error updating status.", "danger")
+        flash("Database error updating issue.", "danger")
         return redirect(url_for("admin.issues", status=status_filter))
 
-    flash(f"Status updated to {new_status}.", "success")
+    flash(f"Issue updated successfully.", "success")
     return redirect(url_for("admin.issues", status=status_filter))
 
 @admin_bp.route("/issues/<issue_id>/pdf")

@@ -1,100 +1,133 @@
 # Jan Suvidha: Setup & Run Guide
 
-Follow these steps to set up the development environment and run the Jan Suvidha platform.
+A complete civic issue reporting system with 3 platforms:
+1. **Mobile App** - For citizens (React Native/Expo)
+2. **Backend API** - Flask server with AI/ML
+3. **Admin Dashboard** - For administrators
 
 ## Prerequisites
 - **Python 3.10+**
 - **MongoDB** (local or Atlas cloud)
-- **Ollama** (optional, for AI description generation)
+- **Node.js** (for mobile app - optional)
+- **Ollama** (optional, for AI descriptions)
 
 ---
 
-## 1. Environment Setup
+## Quick Start
 
-### Create Virtual Environment
+### Step 1: Start Backend (Required for all platforms)
 ```powershell
-python -m venv .venv
-.\.venv\Scripts\activate
+cd backend
+python run.py
 ```
 
-### Install Dependencies
-```powershell
-pip install -r requirements.txt
-```
+Backend runs at: `http://192.168.1.X:5000` (X = your IP)
 
 ---
 
-## 2. Configuration (`.env`)
+## Platform Setup
 
-Create a `.env` file in the `backend/` directory with the following variables:
+### 📱 Mobile App (Citizens)
+```powershell
+cd mobile
+npm install
+npx expo start
+```
+- Scan QR code with Expo Go app on phone
+- Or build APK for standalone installation
+- Update IP in `App.js` to match your laptop's IP
 
+**Features:**
+- Login/Register
+- Report Issues (with photo + GPS)
+- View All Issues
+- Map View
+- My Reported Issues
+
+---
+
+### 🖥️ Admin Dashboard (Administrators)
+1. Open `admin_dashboard/index.html` in browser
+2. Login with admin account
+3. Access dashboards:
+   - Overview (stats + charts)
+   - All Issues (manage, assign, update status)
+   - Departments (efficiency rankings)
+   - Analytics
+   - Users
+
+**Features:**
+- Full analytics with Chart.js
+- Issue management (assign, status updates)
+- Department efficiency tracking
+- User management
+- Export capabilities
+
+---
+
+## Configuration
+
+### Backend Environment
+The backend uses `.env` file in `/backend`:
 ```env
-SECRET_KEY=your_secret_key_here
+SECRET_KEY=your_secret_key
 MONGODB_URI=mongodb://localhost:27017/JanSuvidha
 EMBED_BACKEND=local
 OLLAMA_MODEL=llama3
 SIMILARITY_THRESHOLD=0.78
 ```
 
-> [!IMPORTANT]
-> - For local MongoDB: `mongodb://localhost:27017/JanSuvidha`
-> - For MongoDB Atlas: Use your connection string
-> - Ensure MongoDB service is running before starting the app
-
----
-
-## 3. AI Model Setup
-
-### Ollama (NLP - Optional)
-1. Install Ollama from [ollama.com](https://ollama.com).
-2. Pull the required model:
-   ```bash
-   ollama pull llama3
-   ```
-If Ollama is not available, the system will use fallback descriptions.
-
-### YOLO (Image Detection)
-Ensure the following weights exist in the `models_ai/` directory:
-- `last_jansuvidha.pt` (Custom trained model - Required)
-- `yolov8n.pt` or `yolov8s.pt` (Fallback)
-
-### Sentence Transformers (Duplicate Detection)
-The `sentence-transformers` package will download `all-MiniLM-L6-v2` automatically on first use.
-
----
-
-## 4. Database Initialization
-MongoDB will automatically create the `JanSuvidha` database and collections on first run. No manual setup required.
-
----
-
-## 5. Running the Project
-
-### Start the Backend
-```powershell
-cd backend
-python run.py
+### Mobile App
+Edit `mobile/App.js`:
+```javascript
+const API_URL = 'http://192.168.1.X:5000';  // Your laptop's IP
 ```
 
-The application will be available at: `http://127.0.0.1:5000`
+### Admin Dashboard
+Edit `admin_dashboard/index.html`:
+```javascript
+const API_BASE = 'http://192.168.1.X:5000';  // Your laptop's IP
+```
 
 ---
 
-## 6. Accessing the System
-- **Citizen Access**: Register a new account on the landing page.
-- **Official Access**: After registering, manually change the user's `role` to `admin` or `manager` in MongoDB to access the Authority Dashboard.
+## Making a User Admin
 
-### Accessing MongoDB (for role change)
+Access MongoDB:
 ```powershell
 mongosh
 use JanSuvidha
-db.users.updateOne({"email": "your@email.com"}, {$set: {"role": "admin"}})
+db.users.updateOne({"email": "admin@email.com"}, {$set: {"role": "admin"}})
 ```
 
 ---
 
 ## Troubleshooting
-- **Database Connection Error**: Verify your `MONGODB_URI` and ensure MongoDB is running.
-- **AI Analysis Fails**: Ensure Ollama is running (`ollama serve`) or use fallback mode.
-- **Missing Images**: Ensure the `frontend/static/uploads` directory exists (created automatically on first upload).
-- **Embedding Errors**: First run will download the sentence-transformer model (~90MB).
+
+| Issue | Solution |
+|-------|----------|
+| Cannot connect to backend | Check IP address is correct in mobile/admin |
+| Mobile app not loading | Keep backend running on same network |
+| Login fails | Check user role is "admin" in MongoDB |
+| Camera not working | Grant camera permission on phone |
+
+---
+
+## Project Structure
+```
+JanSuvidha/
+├── backend/           # Flask API Server
+│   ├── app/           # Routes, Models, Services
+│   └── .env          # Configuration
+│
+├── mobile/            # React Native App
+│   ├── App.js        # Main app
+│   └── src/screens/  # All screens
+│
+├── admin_dashboard/   # Admin Portal
+│   └── index.html    # Single-page dashboard
+│
+├── models_ai/         # YOLO models
+├── SETUP.md          # This guide
+└── requirements.txt   # Python dependencies
+```

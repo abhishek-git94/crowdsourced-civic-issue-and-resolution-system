@@ -1,0 +1,9 @@
+node_modules/
+.expo/
+dist/
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+.env.local
+.env.*.local
+.DS_Store

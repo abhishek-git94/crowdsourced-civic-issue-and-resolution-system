@@ -1,7 +1,7 @@
 import ollama
 from ultralytics import YOLO
 import chromadb
-from datetime import datetime
+from datetime import datetime, timedelta
 import os
 import cv2
 from ..utils.duplicate_detector import (
@@ -13,6 +13,121 @@ from ..utils.duplicate_detector import (
 )
 from ..config import Config
 from .ml_service import nlp_classifier, rnn_predictor
+from .advanced_ai import (
+    analyze_sentiment,
+    smart_assign_department,
+    predict_resolution_days,
+    cluster_issues,
+    detect_anomalies,
+    natural_language_query
+)
+
+
+def calculate_dynamic_severity(confidence, similar_issues):
+    """
+    Calculate severity based on:
+    1. Confidence level (0-100)
+    2. Number of similar reports
+    3. Recency of similar reports (recent = higher severity)
+    
+    Returns: 'Low', 'Medium', 'High'
+    """
+    if not similar_issues:
+        if confidence >= 80:
+            return 'High'
+        elif confidence >= 50:
+            return 'Medium'
+        return 'Low'
+    
+    num_similar = len(similar_issues)
+    
+    now = datetime.now()
+    recency_score = 0
+    for sim_issue in similar_issues:
+        if hasattr(sim_issue, 'created_at') and sim_issue.created_at:
+            days_old = (now - sim_issue.created_at).days
+            if days_old <= 7:
+                recency_score += 3
+            elif days_old <= 30:
+                recency_score += 2
+            elif days_old <= 90:
+                recency_score += 1
+    
+    confidence_score = confidence
+    report_score = min(num_similar * 15, 60)
+    
+    total_score = (
+        (confidence_score * 0.30) +
+        (report_score * 0.40) +
+        (recency_score * 10 * 0.30)
+    )
+    
+    if total_score >= 60:
+        return 'High'
+    elif total_score >= 35:
+        return 'Medium'
+    return 'Low'
+
+
+def calculate_priority(severity, category, department):
+    """
+    Calculate priority based on:
+    1. Severity (already computed)
+    2. Category type (infrastructure > sanitation > parks > other)
+    3. Department workload (fewer pending = higher priority)
+    
+    Returns: 'Low', 'Medium', 'High', 'Urgent'
+    """
+    severity_scores = {'Low': 1, 'Medium': 2, 'High': 3}
+    base_score = severity_scores.get(severity, 1)
+    
+    # Category priority
+    category_priority = {
+        'infrastructure': 3,
+        'roads': 3,
+        'water': 3,
+        'electricity': 3,
+        'sanitation': 2,
+        'garbage': 2,
+        'parks': 1,
+        'other': 1
+    }
+    cat_score = category_priority.get(category.lower() if category else 'other', 1)
+    
+    # Department factor (simulated - in real app would query dept workload)
+    dept_score = 2
+    
+    total_priority = (base_score * 0.5) + (cat_score * 0.3) + (dept_score * 0.2)
+    
+    if total_priority >= 2.5:
+        return 'Urgent'
+    elif total_priority >= 2.0:
+        return 'High'
+    elif total_priority >= 1.5:
+        return 'Medium'
+    return 'Low'
+
+
+def check_duplicate_threshold(similar_issues, min_similarity=0.75):
+    """
+    Check if any similar issue exceeds the duplicate threshold.
+    Returns: (is_duplicate, matching_issue_id or None)
+    """
+    if not similar_issues:
+        return False, None
+    
+    for sim in similar_issues:
+        if isinstance(sim, dict):
+            similarity = sim.get('similarity', 0)
+            issue_id = sim.get('id')
+        else:
+            similarity = getattr(sim, 'similarity', 0)
+            issue_id = str(sim.id) if hasattr(sim, 'id') else None
+        
+        if similarity >= min_similarity:
+            return True, issue_id
+    
+    return False, None
 
 def enhance_image(img):
     lab = cv2.cvtColor(img, cv2.COLOR_BGR2LAB)
@@ -149,33 +264,58 @@ Write the description now:"""
             print(f"Ollama error: {e}")
             return f"A {category.replace('_', ' ')} issue has been detected at {location}. The image shows {object_summary}. Immediate attention recommended."
 
-    def analyze_civic_issue(self, image_path, location="unknown location"):
+    def analyze_civic_issue(self, image_path, location="unknown location", existing_issues=None, department=None):
         objects = self.analyze_image(image_path)
         category = self.categorize_issue(objects)
         description = self.generate_description(objects, location, category)
         
         max_confidence = max([obj['confidence'] for obj in objects], default=0)
 
-        # Use SVM NLP Classifier for severity if description is available
-        if description:
-            severity = nlp_classifier.predict_severity(description)
-        else:
-            if max_confidence > 80:
-                severity = 'High'
-            elif max_confidence > 50:
-                severity = 'Medium'
-            else:
-                severity = 'Low'
+        similar_issues = []
+        if existing_issues and description:
+            try:
+                embedding = get_local_embedding(description)
+                from ..utils.duplicate_detector import find_similar_issues
+                similar_issues = find_similar_issues(existing_issues, embedding, top_k=10, min_score=0.5)
+            except Exception as e:
+                print(f"Duplicate detection failed: {e}")
+
+        severity = calculate_dynamic_severity(max_confidence, similar_issues)
+        priority = calculate_priority(severity, category, department)
         
-        # RNN component (future scope integration)
-        # prediction = rnn_predictor.predict_resolution_days(category, [])
+        is_duplicate, duplicate_id = check_duplicate_threshold(similar_issues, min_similarity=0.75)
+        
+        # Sentiment Analysis from user description
+        sentiment_result = analyze_sentiment(description)
+        
+        # Smart Department Assignment
+        assigned_dept, dept_confidence = smart_assign_department(category, description, objects)
+        
+        # Resolution Prediction
+        predicted_days = predict_resolution_days(category, severity)
+        
+        # Upgrade severity/priority based on sentiment urgency
+        if sentiment_result['urgency_score'] > 0.6 and severity == 'Low':
+            severity = 'Medium'
+            priority = calculate_priority(severity, category, assigned_dept)
         
         return {
             'description': description,
             'category': category,
             'detected_objects': objects,
             'confidence': max_confidence,
-            'severity': severity
+            'severity': severity,
+            'priority': priority,
+            'similar_issues_count': len(similar_issues),
+            'duplicate_detected': is_duplicate,
+            'duplicate_of': duplicate_id,
+            'similar_issues': similar_issues[:3] if similar_issues else [],
+            # New AI features
+            'sentiment': sentiment_result['sentiment'],
+            'urgency_score': round(sentiment_result['urgency_score'], 2),
+            'assigned_department': assigned_dept,
+            'department_confidence': round(dept_confidence, 2),
+            'predicted_resolution_days': predicted_days
         }
 
     def add_to_knowledge_base(self, issue_id, description, category, location):

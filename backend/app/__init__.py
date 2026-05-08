@@ -1,7 +1,9 @@
 import os
 from flask import Flask
 from flask_login import LoginManager
+from flask_cors import CORS
 from authlib.integrations.flask_client import OAuth
+
 from .config import Config
 from .database import init_db
 from .models import User
@@ -26,12 +28,12 @@ oauth = OAuth()
 
 def create_app(config_class=Config):
     import os
-    base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-    frontend_dir = os.path.join(base_dir, 'frontend')
-    app = Flask(__name__, 
-                template_folder=os.path.join(frontend_dir, 'templates'),
-                static_folder=os.path.join(frontend_dir, 'static'))
+    app = Flask(__name__)
     app.config.from_object(config_class)
+    
+    # Enable CORS
+    CORS(app)
+
 
     # Initialize extensions
     init_db(app)

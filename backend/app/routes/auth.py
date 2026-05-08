@@ -9,16 +9,27 @@ auth_bp = Blueprint("auth", __name__, url_prefix="/auth")
 @auth_bp.route("/register", methods=["GET", "POST"])
 def register():
     if request.method == "POST":
-        name = request.form.get("name")
-        email = request.form.get("email")
-        password = request.form.get("password")
+        # Handle JSON from Mobile App or Form from Web
+        if request.is_json:
+            data = request.get_json()
+            name = data.get("name")
+            email = data.get("email", "").strip().lower()
+            password = data.get("password")
+        else:
+            name = request.form.get("name")
+            email = request.form.get("email", "").strip().lower()
+            password = request.form.get("password")
 
         if not name or not email or not password:
+            if request.is_json:
+                return {"success": False, "message": "All fields are required."}, 400
             flash("All fields are required.", "warning")
             return redirect(url_for("auth.register"))
 
         existing = User.objects(email=email).first()
         if existing:
+            if request.is_json:
+                return {"success": False, "message": "Email already registered."}, 400
             flash("Email already registered.", "danger")
             return redirect(url_for("auth.register"))
 
@@ -30,6 +41,9 @@ def register():
         )
         new_user.save()
 
+        if request.is_json:
+            return {"success": True, "message": "Registration successful!"}
+
         flash("Registration successful! Please login.", "success")
         return redirect(url_for("auth.login"))
 
@@ -38,12 +52,20 @@ def register():
 @auth_bp.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
-        email = request.form.get("email")
-        password = request.form.get("password")
+        # Handle JSON from Mobile App or Form from Web
+        if request.is_json:
+            data = request.get_json()
+            email = data.get("email", "").strip().lower()
+            password = data.get("password")
+        else:
+            email = request.form.get("email", "").strip().lower()
+            password = request.form.get("password")
 
         user = User.objects(email=email).first()
 
         if not user or not check_password_hash(user.password, password):
+            if request.is_json:
+                return {"success": False, "message": "Invalid email or password."}, 401
             flash("Invalid email or password.", "danger")
             return redirect(url_for("auth.login"))
 
@@ -51,6 +73,17 @@ def login():
         session["user_id"] = str(user.id)
         session["user_name"] = user.name
         session["user_role"] = user.role
+
+        if request.is_json:
+            return {
+                "success": True,
+                "user": {
+                    "id": str(user.id),
+                    "name": user.name,
+                    "email": user.email,
+                    "role": user.role
+                }
+            }
 
         flash("Login successful!", "success")
         next_page = request.args.get("next")

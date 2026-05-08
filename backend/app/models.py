@@ -43,6 +43,10 @@ class Issue(Document):
     category = StringField(max_length=100)
     confidence = FloatField()
     severity = StringField(max_length=50)
+    priority = StringField(max_length=50, default="Low")
+    sentiment = StringField(max_length=50)
+    urgency_score = FloatField()
+    predicted_resolution_days = IntField()
     assigned_to = StringField(max_length=100)
     
     is_confirmed_by_citizen = BooleanField(default=False)

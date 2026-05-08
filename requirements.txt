@@ -20,3 +20,4 @@ Authlib
 cryptography
 sentence-transformers
 openai
+flask-cors
