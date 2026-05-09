@@ -40,14 +40,17 @@ An AI-powered civic issue reporting and management platform with 3 platforms:
 
 ## Quick Start
 
-### 1. Start Backend
+### 1. Start MongoDB
+Make sure MongoDB is running (default: localhost:27017)
+
+### 2. Start Backend
 ```powershell
 cd backend
 python run.py
 ```
-Backend runs at: `http://192.168.29.159:5000`
+Backend runs at: `http://192.168.29.159:5000` (binds to 0.0.0.0)
 
-### 2. Mobile App
+### 3. Mobile App
 ```powershell
 cd mobile
 npm install
@@ -55,9 +58,14 @@ npx expo start
 ```
 - Scan QR code with Expo Go on phone
 - Or build APK for standalone use
+- Make sure phone is on same WiFi as backend laptop
 
-### 3. Admin Dashboard
+### 4. Admin Dashboard
 Open `admin_dashboard/index.html` in browser
+
+**Login Credentials:**
+- Email: `admin@js.com`
+- Password: `admin123`
 
 ---
 
@@ -154,9 +162,9 @@ crowdsourced-civic-issue-and-resolution-system/
 ## Prerequisites
 
 - Python 3.10+
-- MongoDB (local or Atlas)
+- MongoDB (local or Atlas) - required for backend
 - Node.js (for mobile)
-- Ollama (optional, for AI descriptions)
+- Ollama (optional - AI features work with fallback even without it)
 
 ---
 
@@ -164,10 +172,16 @@ crowdsourced-civic-issue-and-resolution-system/
 
 | Issue | Solution |
 |-------|----------|
-| Cannot connect to backend | Check IP address in mobile/admin |
-| Mobile app not loading | Keep backend running |
-| Login fails | User role must be "admin" in MongoDB |
+| Cannot connect to backend | Check IP address in mobile/admin matches laptop IP |
+| Mobile app not loading | Keep backend running, ensure same WiFi |
+| Login fails | Use admin@js.com / admin123 for admin |
 | Camera not working | Grant camera permission on phone |
+| AI analysis shows fallback | Normal - AI works even without Ollama/YOLO |
+
+## Additional Documentation
+
+- `PROJECT_DOCUMENTATION.md` - Complete project reference for developers
+- `PRESENTATION_CONTENT.md` - Presentation outline for final demo
 
 ---
 
