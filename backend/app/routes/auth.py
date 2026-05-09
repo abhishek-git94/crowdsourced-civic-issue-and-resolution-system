@@ -62,6 +62,11 @@ def login():
             password = request.form.get("password")
 
         user = User.objects(email=email).first()
+        
+        print(f"DEBUG LOGIN: email={email}, user_found={user is not None}")
+        if user:
+            print(f"DEBUG: stored_hash={user.password[:40]}...")
+            print(f"DEBUG: provided_password={password}")
 
         if not user or not check_password_hash(user.password, password):
             if request.is_json:
@@ -192,3 +197,100 @@ def firebase_login():
         import logging
         logging.error(f"Firebase auth error: {e}")
         return {"success": False, "error": str(e)}, 401
+
+
+@auth_bp.route("/profile", methods=["PUT", "POST"])
+def update_profile():
+    """
+    Update current user's profile.
+    Accepts X-User-ID header (mobile) or session (web).
+    Body JSON: { "name": "...", "phone_number": "..." }
+    """
+    # Resolve user
+    acting_user = None
+    if current_user.is_authenticated:
+        acting_user = current_user
+    else:
+        uid = request.headers.get('X-User-ID', '').strip()
+        if uid:
+            try:
+                acting_user = User.objects(id=uid).first()
+            except Exception:
+                pass
+
+    if not acting_user:
+        return {"success": False, "message": "Unauthorized"}, 401
+
+    data = request.get_json() or {}
+    name  = data.get("name", "").strip()
+    phone = data.get("phone_number", "").strip()
+
+    if name:
+        acting_user.name = name
+    if phone:
+        acting_user.phone_number = phone
+
+    try:
+        acting_user.save()
+    except Exception as e:
+        return {"success": False, "message": str(e)}, 500
+
+    return {
+        "success": True,
+        "user": {
+            "id":           str(acting_user.id),
+            "name":         acting_user.name,
+            "email":        acting_user.email,
+            "role":         acting_user.role,
+            "points":       acting_user.points or 0,
+            "phone_number": acting_user.phone_number or "",
+        }
+    }
+
+
+# Debug endpoint - remove in production
+@auth_bp.route("/debug-user", methods=["POST"])
+def debug_user():
+    from flask import request
+    data = request.get_json() or {}
+    email = data.get("email", "").strip().lower()
+    user = User.objects(email=email).first()
+    if user:
+        return {
+            "exists": True,
+            "email": user.email,
+            "name": user.name,
+            "role": user.role,
+            "password_hash_start": user.password[:30] if user.password else "None",
+            "password_method": "werkzeug" if user.password and user.password.startswith("pbkdf2") else "unknown"
+        }
+    return {"exists": False, "email": email}
+
+# Debug login - bypass password check for testing
+@auth_bp.route("/debug-login", methods=["POST"])
+def debug_login():
+    from flask import request
+    data = request.get_json() or {}
+    email = data.get("email", "").strip().lower()
+    user = User.objects(email=email).first()
+    if user:
+        return {
+            "success": True,
+            "user": {"id": str(user.id), "name": user.name, "email": user.email, "role": user.role}
+        }
+    return {"success": False, "message": "User not found"}, 404
+
+# Debug: Update user password
+@auth_bp.route("/debug-reset-password", methods=["POST"])
+def debug_reset_password():
+    from flask import request
+    from werkzeug.security import generate_password_hash
+    data = request.get_json() or {}
+    email = data.get("email", "").strip().lower()
+    new_password = data.get("password", "test123")
+    user = User.objects(email=email).first()
+    if user:
+        user.password = generate_password_hash(new_password)
+        user.save()
+        return {"success": True, "message": f"Password reset to: {new_password}"}
+    return {"success": False, "message": "User not found"}, 404

@@ -13,16 +13,16 @@ LABEL_DIR = os.path.join(BASE_PATH, "labels")
 
 transform = A.Compose([
     A.RandomBrightnessContrast(
-        brightness_limit=(-0.7, -0.3),   # 🔥 strong dark
+        brightness_limit=(-0.7, -0.3),   # strong dark
         contrast_limit=(-0.4, 0.4),
         p=0.9
     ),
     A.GaussNoise(p=0.6),
     A.MotionBlur(blur_limit=7, p=0.5),
 
-    A.RandomShadow(p=0.6),   # 🌑 night shadows
-    A.RandomFog(p=0.4),      # 🌫️ fog
-    A.RandomRain(p=0.5),     # 🌧️ rain
+    A.RandomShadow(p=0.6),   # night shadows
+    A.RandomFog(p=0.4),      # fog
+    A.RandomRain(p=0.5),     # rain
 ])
 images = [img for img in os.listdir(IMAGE_DIR) if img.endswith(('.jpg', '.png'))]
 

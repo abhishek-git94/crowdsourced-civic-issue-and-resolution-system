@@ -6,7 +6,6 @@ from flask_login import login_required, current_user
 from werkzeug.utils import secure_filename
 
 from ..models import Issue, Upvote, User
-from ..services.ai_service import CivicAIAnalyzer
 from ..utils.duplicate_detector import (
     get_local_embedding, get_openai_embedding,
     cosine_similarity, embed_to_json
@@ -14,13 +13,46 @@ from ..utils.duplicate_detector import (
 
 issues_bp = Blueprint("issues", __name__)
 
-# Initialize AI Analyzer
-ai_analyzer = CivicAIAnalyzer()
+# Lazy AI Analyzer – initialised on first use so Blueprint always loads safely
+_ai_analyzer = None
+
+def get_ai_analyzer():
+    global _ai_analyzer
+    if _ai_analyzer is None:
+        try:
+            from ..services.ai_service import get_analyzer
+            _ai_analyzer = get_analyzer()
+        except Exception as e:
+            import logging
+            logging.warning(f"AI analyzer unavailable: {e}")
+    return _ai_analyzer
+
+# Module-level proxy – api.py does `from .issues import ai_analyzer`
+class _LazyAnalyzer:
+    def __getattr__(self, name):
+        a = get_ai_analyzer()
+        if a is None:
+            raise AttributeError(f"AI analyzer not available ({name})")
+        return getattr(a, name)
+
+ai_analyzer = _LazyAnalyzer()
 
 @issues_bp.route("/view")
 def view_issues():
+    status_filter = request.args.get('status', '')
+    severity_filter = request.args.get('severity', '')
+    search_query = request.args.get('search', '')
+    
     try:
         issues = Issue.objects.order_by('-created_at')
+        
+        # Apply filters
+        if status_filter:
+            issues = issues.filter(status=status_filter.replace('+', ' '))
+        if severity_filter:
+            issues = issues.filter(severity=severity_filter)
+        if search_query:
+            issues = issues.filter(issue__icontains=search_query)
         
         # If request expects JSON (Mobile App)
         if request.is_json or request.args.get('format') == 'json' or 'application/json' in request.headers.get('Accept', ''):
@@ -35,10 +67,17 @@ def view_issues():
                     "status": i.status,
                     "category": i.category,
                     "severity": i.severity,
+                    "upvotes": i.upvotes,
                     "created_at": i.created_at.isoformat()
                 })
             return jsonify({"success": True, "issues": issue_list})
 
+        # For web: add user voting info if logged in
+        if current_user.is_authenticated:
+            voted_ids = {str(upvote.issue.id) for upvote in Upvote.objects(user=current_user.id)}
+            for issue in issues:
+                issue.has_upvoted = str(issue.id) in voted_ids
+        
         return render_template("view_issues.html", issues=issues)
     except Exception as e:
         current_app.logger.error(f"Error viewing issues: {e}")
@@ -46,37 +85,58 @@ def view_issues():
         return render_template("downtime.html")
 
 @issues_bp.route("/issue/<issue_id>/upvote", methods=["POST"])
-@login_required
 def upvote_issue(issue_id):
     is_ajax = request.headers.get("X-Requested-With") == "XMLHttpRequest"
+    is_json_req = request.is_json or 'application/json' in request.headers.get('Accept', '')
+
+    # Resolve acting user: session login OR mobile X-User-ID header
+    acting_user = None
+    if current_user.is_authenticated:
+        acting_user = current_user
+    else:
+        uid = request.headers.get('X-User-ID', '')
+        if uid:
+            try:
+                acting_user = User.objects(id=uid).first()
+            except Exception:
+                pass
+
+    if not acting_user:
+        if is_ajax or is_json_req:
+            return jsonify({"success": False, "error": "Login required"}), 401
+        flash("Please login to upvote.", "warning")
+        return redirect(url_for("auth.login"))
+
     try:
         issue = Issue.objects(id=issue_id).first()
         if not issue:
-            if is_ajax: return jsonify({"success": False, "error": "Issue not found"}), 404
+            if is_ajax or is_json_req: return jsonify({"success": False, "error": "Issue not found"}), 404
             flash("Issue not found.", "danger")
             return redirect(url_for("issues.view_issues"))
 
-        existing_vote = Upvote.objects(user=current_user.id, issue=issue.id).first()
+        existing_vote = Upvote.objects(user=acting_user.id, issue=issue.id).first()
 
         if existing_vote:
             existing_vote.delete()
             issue.upvotes = max(0, issue.upvotes - 1)
             issue.save()
-            if is_ajax: return jsonify({"success": True, "upvoted": False, "upvotes": issue.upvotes, "status": "removed"})
+            if is_ajax or is_json_req:
+                return jsonify({"success": True, "upvoted": False, "upvotes": issue.upvotes, "status": "removed"})
             flash("Vote removed.", "info")
             return redirect(url_for("issues.view_issues"))
 
-        new_vote = Upvote(user=current_user.id, issue=issue.id)
+        new_vote = Upvote(user=acting_user.id, issue=issue.id)
         new_vote.save()
         issue.upvotes += 1
-        
+
         # Gamification: Award points to the reporter
         if issue.user:
             issue.user.points += 5
             issue.user.save()
-            
+
         issue.save()
-        if is_ajax: return jsonify({"success": True, "upvoted": True, "upvotes": issue.upvotes, "status": "added"})
+        if is_ajax or is_json_req:
+            return jsonify({"success": True, "upvoted": True, "upvotes": issue.upvotes, "status": "added"})
         flash("Upvoted! Reporter earned points.", "success")
         return redirect(url_for("issues.view_issues"))
     except Exception as e:
@@ -349,6 +409,32 @@ def my_issues():
         in_progress_count = Issue.objects(user=current_user.id, status='In Progress').count()
         resolved_count = Issue.objects(user=current_user.id, status__in=['Resolved', 'Resolved (Unconfirmed)']).count()
         
+        # If request expects JSON (Mobile App)
+        if request.is_json or request.args.get('format') == 'json' or 'application/json' in request.headers.get('Accept', ''):
+            issue_list = []
+            for i in issues:
+                issue_list.append({
+                    "id": str(i.id),
+                    "issue": i.issue,
+                    "location": i.location,
+                    "latitude": i.latitude,
+                    "longitude": i.longitude,
+                    "status": i.status,
+                    "category": i.category,
+                    "severity": i.severity,
+                    "upvotes": i.upvotes,
+                    "created_at": i.created_at.isoformat()
+                })
+            return jsonify({
+                "success": True,
+                "issues": issue_list,
+                "stats": {
+                    "pending": pending_count,
+                    "in_progress": in_progress_count,
+                    "resolved": resolved_count
+                }
+            })
+        
         return render_template("citizen_dashboard.html", 
                              my_issues=issues,
                              my_issues_status={
@@ -364,17 +450,41 @@ def my_issues():
 
 
 @issues_bp.route("/issue/<issue_id>")
-@login_required
 def issue_detail(issue_id):
     try:
         issue = Issue.objects(id=issue_id).first()
         if not issue:
+            if request.is_json or 'application/json' in request.headers.get('Accept', ''):
+                return jsonify({"success": False, "error": "Issue not found"}), 404
             flash("Issue not found.", "danger")
             return redirect(url_for("issues.view_issues"))
         
-        has_voted = Upvote.objects(user=current_user.id, issue=issue.id).first()
-        issue.has_upvoted = bool(has_voted)
+        # Include user voting info only if logged in
+        has_voted = False
+        if current_user.is_authenticated:
+            has_voted = bool(Upvote.objects(user=current_user.id, issue=issue.id).first())
         
+        # If request expects JSON (Mobile App)
+        if request.is_json or request.args.get('format') == 'json' or 'application/json' in request.headers.get('Accept', ''):
+            return jsonify({
+                "success": True,
+                "issue": {
+                    "id": str(issue.id),
+                    "issue": issue.issue,
+                    "location": issue.location,
+                    "latitude": issue.latitude,
+                    "longitude": issue.longitude,
+                    "status": issue.status,
+                    "category": issue.category,
+                    "severity": issue.severity,
+                    "upvotes": issue.upvotes,
+                    "has_upvoted": has_voted,
+                    "created_at": issue.created_at.isoformat(),
+                    "image_url": issue.image_url if hasattr(issue, 'image_url') else None
+                }
+            })
+        
+        # For web, get similar issues and duplicates
         similar_issues = []
         if issue.embedding:
             try:
@@ -397,6 +507,8 @@ def issue_detail(issue_id):
         
         duplicates = Issue.objects(is_duplicate_of=issue.id)
         
+        issue.has_upvoted = has_voted
+        
         return render_template("issue_detail.html", 
                              issue=issue, 
                              similar_issues=similar_issues,
@@ -407,32 +519,4 @@ def issue_detail(issue_id):
         return redirect(url_for("issues.view_issues"))
 
 
-@issues_bp.route("/view")
-@login_required
-def view_issues_filtered():
-    status_filter = request.args.get('status', '')
-    severity_filter = request.args.get('severity', '')
-    search_query = request.args.get('search', '')
-    
-    try:
-        issues = Issue.objects.order_by('-created_at')
-        
-        if status_filter:
-            issues = issues.filter(status=status_filter.replace('+', ' '))
-        
-        if severity_filter:
-            issues = issues.filter(severity=severity_filter)
-        
-        if search_query:
-            issues = issues.filter(issue__icontains=search_query)
-        
-        voted_ids = {str(upvote.issue.id) for upvote in Upvote.objects(user=current_user.id)}
-        
-        for issue in issues:
-            issue.has_upvoted = str(issue.id) in voted_ids
-        
-        return render_template("view_issues.html", issues=issues)
-    except Exception as e:
-        current_app.logger.error(f"Error viewing issues: {e}")
-        flash("Error loading issues.", "danger")
-        return render_template("downtime.html")
+

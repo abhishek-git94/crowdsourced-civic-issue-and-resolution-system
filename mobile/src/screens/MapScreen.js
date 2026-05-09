@@ -17,7 +17,9 @@ export default function MapScreen({ API_URL }) {
 
   const fetchIssues = async () => {
     try {
-      const response = await fetch(`${API_URL}/issues/view`);
+      const response = await fetch(`${API_URL}/view`, {
+        headers: { 'Accept': 'application/json', 'Bypass-Tunnel-Reminder': 'true' }
+      });
       const data = await response.json();
       setIssues(data.issues || []);
     } catch (e) {
@@ -79,8 +81,17 @@ export default function MapScreen({ API_URL }) {
     <View style={styles.container}>
       <View style={styles.header}>
         <View style={styles.headerContent}>
-          <Text style={styles.title}>Issue Map</Text>
-          <Text style={styles.subtitle}>{issues.length} issues shown</Text>
+          <View style={styles.titleRow}>
+            <View>
+              <Text style={styles.platformName}>Jan Suvidha</Text>
+              <Text style={styles.title}>Issue Map</Text>
+            </View>
+            <View style={styles.aiBadge}>
+              <Ionicons name="sparkles" size={12} color="#fff" />
+              <Text style={styles.aiBadgeText}>AI Hotspots</Text>
+            </View>
+          </View>
+          <Text style={styles.subtitle}>{issues.length} issues • AI clustered by location</Text>
         </View>
         {myAddress && (
           <View style={styles.myLocationBadge}>
@@ -108,7 +119,7 @@ export default function MapScreen({ API_URL }) {
             description={myAddress || 'Your current location'}
           >
             <View style={styles.myLocationMarker}>
-              <Ionicons name="person" size={16} color="white" />
+              <Ionicons name="person" size={18} color="white" />
             </View>
           </Marker>
         )}
@@ -167,6 +178,10 @@ const styles = StyleSheet.create({
   loadingText: { marginTop: 10, color: 'gray' },
   header: { padding: 20, paddingTop: 50, backgroundColor: 'white', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   headerContent: { flex: 1 },
+  titleRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
+  platformName: { fontSize: 14, color: '#8b5cf6', fontWeight: '600', marginBottom: 4 },
+  aiBadge: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#8b5cf6', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 15, gap: 4 },
+  aiBadgeText: { fontSize: 11, color: 'white', fontWeight: '600' },
   title: { fontSize: 28, fontWeight: 'bold', color: '#0d6efd' },
   subtitle: { fontSize: 14, color: 'gray', marginTop: 5 },
   myLocationBadge: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#e7f1ff', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 20, maxWidth: 150 },

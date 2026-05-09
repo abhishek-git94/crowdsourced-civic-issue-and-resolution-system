@@ -4,10 +4,15 @@ import random
 
 
 SENTIMENT_KEYWORDS = {
-    'urgent': ['immediately', 'urgent', 'emergency', 'dangerous', 'unsafe', 'critical', 'life threatening', 'accident', 'injury'],
-    'concerned': ['worried', 'concerned', 'disappointed', 'frustrated', 'annoyed', 'upset', 'fed up'],
-    'normal': ['please', 'request', 'kindly', 'hope', 'could', 'would be nice'],
-    'angry': ['unacceptable', 'ridiculous', 'pathetic', 'worst', 'shameful', 'complaint', 'absolutely']
+    'urgent': [
+        'immediately', 'urgent', 'emergency', 'dangerous', 'unsafe', 'critical', 
+        'life threatening', 'accident', 'injury', 'hazard', 'fallen', 'blocking', 
+        'broken', 'burst', 'fire', 'smoke', 'live wire', 'exposed', 'collapse',
+        'overflowing', 'toxic', 'smell', 'blockage', 'trapped', 'stuck'
+    ],
+    'concerned': ['worried', 'concerned', 'disappointed', 'frustrated', 'annoyed', 'upset', 'fed up', 'help', 'fix'],
+    'normal': ['please', 'request', 'kindly', 'hope', 'could', 'would be nice', 'inform'],
+    'angry': ['unacceptable', 'ridiculous', 'pathetic', 'worst', 'shameful', 'complaint', 'absolutely', 'disgusting', 'negligence']
 }
 
 DEPT_SCORES = {

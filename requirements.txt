@@ -21,3 +21,6 @@ cryptography
 sentence-transformers
 openai
 flask-cors
+pytesseract
+opencv-python-headless
+Pillow

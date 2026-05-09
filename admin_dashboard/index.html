@@ -10,266 +10,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
-    <style>
-        :root {
-            --primary: #0d6efd;
-            --primary-dark: #0a58ca;
-            --success: #198754;
-            --warning: #ffc107;
-            --danger: #dc3545;
-            --dark: #1a1a2e;
-            --light: #f8faff;
-            --sidebar-width: 260px;
-        }
-
-        * { font-family: 'Outfit', sans-serif; }
-        
-        body { background: var(--light); min-height: 100vh; }
-
-        /* Login */
-        .login-container {
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-        }
-
-        .login-box {
-            background: white;
-            padding: 40px;
-            border-radius: 20px;
-            width: 100%;
-            max-width: 400px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-        }
-
-        .login-logo { text-align: center; margin-bottom: 30px; }
-        .login-logo i { font-size: 50px; color: var(--primary); }
-
-        /* Sidebar */
-        .sidebar {
-            position: fixed;
-            left: 0;
-            top: 0;
-            bottom: 0;
-            width: var(--sidebar-width);
-            background: var(--dark);
-            color: white;
-            padding: 20px;
-            z-index: 100;
-        }
-
-        .sidebar-brand {
-            font-size: 24px;
-            font-weight: 700;
-            color: var(--primary);
-            padding: 20px 0;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
-            margin-bottom: 30px;
-        }
-
-        .sidebar-brand i { margin-right: 10px; }
-
-        .nav-item {
-            padding: 12px 15px;
-            border-radius: 10px;
-            margin-bottom: 5px;
-            cursor: pointer;
-            transition: all 0.2s;
-            color: rgba(255,255,255,0.7);
-        }
-
-        .nav-item:hover, .nav-item.active {
-            background: var(--primary);
-            color: white;
-        }
-
-        .nav-item i { margin-right: 12px; }
-        
-        .nav-item .badge {
-            float: right;
-            font-size: 11px;
-            padding: 3px 8px;
-        }
-
-        /* Main Content */
-        .main-content {
-            margin-left: var(--sidebar-width);
-            padding: 30px;
-            min-height: 100vh;
-        }
-
-        /* Stats Cards */
-        .stat-card {
-            background: white;
-            border-radius: 16px;
-            padding: 25px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.05);
-            transition: transform 0.2s;
-        }
-
-        .stat-card:hover { transform: translateY(-3px); }
-
-        .stat-icon {
-            width: 50px;
-            height: 50px;
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 24px;
-        }
-
-        .stat-number { font-size: 32px; font-weight: 700; color: var(--dark); }
-        .stat-label { color: #666; font-size: 14px; }
-
-        /* Tables */
-        .data-table {
-            background: white;
-            border-radius: 16px;
-            overflow: hidden;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.05);
-        }
-
-        .data-table th {
-            background: #f8f9fa;
-            padding: 15px;
-            font-weight: 600;
-            border: none;
-        }
-
-        .data-table td { padding: 12px 15px; border-bottom: 1px solid #f0f0f0; }
-
-        /* Status Badges */
-        .status-badge { padding: 5px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; }
-        .status-pending { background: #fff3cd; color: #856404; }
-        .status-progress { background: #cce5ff; color: #004085; }
-        .status-resolved { background: #d4edda; color: #155724; }
-
-        /* Severity */
-        .severity-high { color: var(--danger); font-weight: 700; }
-        .severity-medium { color: var(--warning); font-weight: 700; }
-        .severity-low { color: var(--success); font-weight: 700; }
-        
-        .priority-urgent { color: #dc2626; font-weight: 700; font-size: 0.85em; }
-        .priority-high { color: #ea580c; font-weight: 700; }
-        .priority-medium { color: #ca8a04; font-weight: 700; }
-        .priority-low { color: var(--success); font-weight: 700; }
-
-        /* Form Controls */
-        .form-control, .form-select {
-            border-radius: 10px;
-            padding: 10px 15px;
-            border: 1px solid #e0e0e0;
-        }
-
-        .form-control:focus, .form-select:focus {
-            border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.1);
-        }
-
-        /* Buttons */
-        .btn-sm { padding: 6px 12px; font-size: 13px; }
-
-        .btn-action {
-            padding: 5px 10px;
-            border-radius: 6px;
-            font-size: 12px;
-            border: none;
-            cursor: pointer;
-            margin: 2px;
-        }
-
-        .btn-view { background: #e7f1ff; color: var(--primary); }
-        .btn-view:hover { background: var(--primary); color: white; }
-
-        .btn-edit { background: #fff3cd; color: #856404; }
-        .btn-edit:hover { background: var(--warning); color: white; }
-
-        .btn-delete { background: #f8d7da; color: var(--danger); }
-        .btn-delete:hover { background: var(--danger); color: white; }
-
-        /* Search & Filters */
-        .search-box {
-            background: white;
-            border-radius: 12px;
-            padding: 12px 20px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-        }
-
-        .search-box input { border: none; outline: none; flex: 1; }
-
-        .filter-group { display: flex; gap: 10px; }
-        
-        .ai-query-box {
-            display: flex;
-            align-items: center;
-            background: #f0f9ff;
-            border: 2px solid #0d6efd;
-            border-radius: 8px;
-            padding: 6px 12px;
-            gap: 8px;
-        }
-        
-        .ai-query-box input {
-            border: none;
-            outline: none;
-            background: transparent;
-            font-size: 13px;
-            width: 200px;
-        }
-        
-        .ai-query-box input::placeholder { color: #6b7280; }
-
-        /* Charts */
-        .chart-container {
-            background: white;
-            border-radius: 16px;
-            padding: 20px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.05);
-        }
-
-        /* Actions Bar */
-        .actions-bar {
-            background: white;
-            border-radius: 16px;
-            padding: 15px 20px;
-            margin-bottom: 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 15px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-        }
-
-        /* Checkbox */
-        .form-check-input { width: 18px; height: 18px; }
-
-        /* Pagination */
-        .pagination { margin: 0; }
-        .page-link { border-radius: 8px; margin: 0 2px; }
-
-        /* Loading */
-        .loading { display: flex; justify-content: center; align-items: center; padding: 40px; }
-        
-        /* Modal */
-        .modal-content { border-radius: 16px; }
-        
-        /* Toast */
-        .toast-container { position: fixed; top: 20px; right: 20px; z-index: 9999; }
-
-        /* Responsive */
-        @media (max-width: 768px) {
-            .sidebar { transform: translateX(-100%); }
-            .main-content { margin-left: 0; }
-            .actions-bar { flex-direction: column; align-items: stretch; }
-        }
-    </style>
+    <link rel="stylesheet" href="css/admin-style.css">
 </head>
 <body>
 
@@ -338,6 +79,24 @@
 
         <!-- Main Content -->
         <div class="main-content">
+            
+            <!-- AI Powered Banner -->
+            <div style="background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%); padding: 15px 20px; margin-bottom: 20px; border-radius: 12px; color: white;">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div style="font-size: 16px; font-weight: 700;">
+                            <i class="bi bi-cpu me-2"></i> AI-Powered Civic Management - <span id="cityName">Indore Region</span>
+                        </div>
+                        <div style="font-size: 13px; opacity: 0.9; margin-top: 4px;">
+                            Smart classification • Hotspot prediction • Priority scoring • Resolution forecasting
+                        </div>
+                    </div>
+                    <div style="text-align: right;">
+                        <div style="font-size: 24px; font-weight: bold;">14 AI</div>
+                        <div style="font-size: 11px; opacity: 0.8;">Models Active</div>
+                    </div>
+                </div>
+            </div>
             
             <!-- Overview Page -->
             <div id="page-overview">
@@ -727,6 +486,13 @@
                         <option value="manager">Manager</option>
                         <option value="admin">Admin</option>
                     </select>
+                    <select class="form-select" onchange="sortUsers(this.value)" style="width: auto;">
+                        <option value="name">Sort: Name</option>
+                        <option value="email">Sort: Email</option>
+                        <option value="issues_reported">Sort: Issues</option>
+                        <option value="points">Sort: Points</option>
+                        <option value="role">Sort: Role</option>
+                    </select>
                 </div>
 
                 <div class="data-table">
@@ -852,6 +618,207 @@
                         </div>
                     </div>
                     
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-header bg-dark text-white">
+                                <i class="bi bi-cpu me-2"></i>AI Model Status - Live
+                            </div>
+                            <div class="card-body">
+                                <div class="row g-3">
+                                    <div class="col-md-3">
+                                        <div class="p-3 border rounded bg-light">
+                                            <div class="d-flex align-items-center">
+                                                <i class="bi bi-eye text-primary fs-4 me-2"></i>
+                                                <div>
+                                                    <strong>YOLO Detection</strong>
+                                                    <div class="text-success small">● Active</div>
+                                                    <small class="text-muted">Object Detection</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="p-3 border rounded bg-light">
+                                            <div class="d-flex align-items-center">
+                                                <i class="bi bi-chat-dots text-info fs-4 me-2"></i>
+                                                <div>
+                                                    <strong>Ollama LLM</strong>
+                                                    <div class="text-success small">● Active</div>
+                                                    <small class="text-muted">Text Generation</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="p-3 border rounded bg-light">
+                                            <div class="d-flex align-items-center">
+                                                <i class="bi bi-diagram-3 text-warning fs-4 me-2"></i>
+                                                <div>
+                                                    <strong>SVM Classifier</strong>
+                                                    <div class="text-success small">● Active</div>
+                                                    <small class="text-muted">Severity Classification</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="p-3 border rounded bg-light">
+                                            <div class="d-flex align-items-center">
+                                                <i class="bi bi-hdd text-success fs-4 me-2"></i>
+                                                <div>
+                                                    <strong>LSTM Predictor</strong>
+                                                    <div class="text-success small">● Active</div>
+                                                    <small class="text-muted">Resolution Time</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="p-3 border rounded bg-light">
+                                            <div class="d-flex align-items-center">
+                                                <i class="bi bi-emoji-expressionless text-purple fs-4 me-2"></i>
+                                                <div>
+                                                    <strong>Sentiment Analysis</strong>
+                                                    <div class="text-success small">● Active</div>
+                                                    <small class="text-muted">Urgency Detection</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="p-3 border rounded bg-light">
+                                            <div class="d-flex align-items-center">
+                                                <i class="bi bi-person-badge text-primary fs-4 me-2"></i>
+                                                <div>
+                                                    <strong>Smart Assignment</strong>
+                                                    <div class="text-success small">● Active</div>
+                                                    <small class="text-muted">8 Departments</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="p-3 border rounded bg-light">
+                                            <div class="d-flex align-items-center">
+                                                <i class="bi bi-collection text-info fs-4 me-2"></i>
+                                                <div>
+                                                    <strong>Issue Clustering</strong>
+                                                    <div class="text-success small">● Active</div>
+                                                    <small class="text-muted">Similar Issues</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="p-3 border rounded bg-light">
+                                            <div class="d-flex align-items-center">
+                                                <i class="bi bi-exclamation-triangle text-danger fs-4 me-2"></i>
+                                                <div>
+                                                    <strong>Anomaly Detection</strong>
+                                                    <div class="text-success small">● Active</div>
+                                                    <small class="text-muted">Pattern Analysis</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <!-- NEW AI COMPONENTS -->
+                                    <div class="col-md-3">
+                                        <div class="p-3 border rounded bg-light">
+                                            <div class="d-flex align-items-center">
+                                                <i class="bi bi-diagram-3 text-success fs-4 me-2"></i>
+                                                <div>
+                                                    <strong>Issue Classifier</strong>
+                                                    <div class="text-success small">● Active</div>
+                                                    <small class="text-muted">Type Detection</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="p-3 border rounded bg-light">
+                                            <div class="d-flex align-items-center">
+                                                <i class="bi bi-geo-alt text-warning fs-4 me-2"></i>
+                                                <div>
+                                                    <strong>Hotspot Predictor</strong>
+                                                    <div class="text-success small">● Active</div>
+                                                    <small class="text-muted">Location Forecasting</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="p-3 border rounded bg-light">
+                                            <div class="d-flex align-items-center">
+                                                <i class="bi bi-link-45deg text-info fs-4 me-2"></i>
+                                                <div>
+                                                    <strong>Similar Issue Linker</strong>
+                                                    <div class="text-success small">● Active</div>
+                                                    <small class="text-muted">Auto-Grouping</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="p-3 border rounded bg-light">
+                                            <div class="d-flex align-items-center">
+                                                <i class="bi bi-list-ol text-purple fs-4 me-2"></i>
+                                                <div>
+                                                    <strong>Priority Auto-Scorer</strong>
+                                                    <div class="text-success small">● Active</div>
+                                                    <small class="text-muted">Smart Ranking</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-header bg-info text-white">
+                                <i class="bi bi-tools me-2"></i>Civic AI Tools
+                            </div>
+                            <div class="card-body">
+                                <div class="row g-3">
+                                    <div class="col-md-3">
+                                        <div class="border rounded p-3">
+                                            <h6 class="mb-2"><i class="bi bi-diagram-3 me-2"></i>Issue Classifier</h6>
+                                            <textarea class="form-control mb-2" id="classifyDesc" placeholder="Describe an issue..." rows="2"></textarea>
+                                            <button class="btn btn-sm btn-outline-primary w-100" onclick="testClassify()">Classify</button>
+                                            <div id="classifyResult" class="mt-2 small"></div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="border rounded p-3">
+                                            <h6 class="mb-2"><i class="bi bi-geo-alt me-2"></i>Hotspot Predictor</h6>
+                                            <p class="small text-muted mb-2">Predict areas with high issue probability</p>
+                                            <button class="btn btn-sm btn-outline-success w-100" onclick="testHotspots()">Find Hotspots</button>
+                                            <div id="hotspotResult" class="mt-2 small" style="max-height:120px;overflow-y:auto;"></div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="border rounded p-3">
+                                            <h6 class="mb-2"><i class="bi bi-link-45deg me-2"></i>Similar Issues</h6>
+                                            <textarea class="form-control mb-2" id="similarDesc" placeholder="Issue description..." rows="2"></textarea>
+                                            <button class="btn btn-sm btn-outline-warning w-100" onclick="testSimilar()">Find Similar</button>
+                                            <div id="similarResult" class="mt-2 small" style="max-height:120px;overflow-y:auto;"></div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="border rounded p-3">
+                                            <h6 class="mb-2"><i class="bi bi-graph-up me-2"></i>Resolution Trends</h6>
+                                            <p class="small text-muted mb-2">Analyze resolution performance</p>
+                                            <button class="btn btn-sm btn-outline-info w-100" onclick="testTrends()">Analyze</button>
+                                            <div id="trendsResult" class="mt-2 small" style="max-height:120px;overflow-y:auto;"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
                     <div class="col-md-6">
                         <div class="card">
                             <div class="card-header bg-danger text-white">
@@ -933,549 +900,6 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        // Configuration - CHANGE THIS to your backend IP
-        const API_BASE = 'http://192.168.1.100:5000';
-        
-        let currentUser = null;
-        let allIssues = [];
-        let allUsers = [];
-        let filteredIssues = [];
-        let currentPage = 1;
-        const itemsPerPage = 20;
-        let issueModal = null;
-
-        // Initialize
-        document.addEventListener('DOMContentLoaded', function() {
-            issueModal = new bootstrap.Modal(document.getElementById('issueModal'));
-        });
-
-        // Login
-        document.getElementById('loginForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const email = document.getElementById('adminEmail').value;
-            const password = document.getElementById('adminPassword').value;
-
-            try {
-                const response = await fetch(`${API_BASE}/auth/login`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email, password })
-                });
-                
-                const data = await response.json();
-                
-                if (response.ok && (data.user.role === 'admin' || data.user.role === 'manager')) {
-                    currentUser = data.user;
-                    document.getElementById('loginScreen').style.display = 'none';
-                    document.getElementById('dashboardScreen').style.display = 'block';
-                    loadDashboard();
-                    showToast('Welcome back, ' + currentUser.name + '!', 'success');
-                } else {
-                    showToast('Access denied. Admin/Manager only.', 'danger');
-                }
-            } catch (err) {
-                showToast('Cannot connect to server!', 'danger');
-            }
-        });
-
-        // Logout
-        function logout() {
-            currentUser = null;
-            document.getElementById('loginScreen').style.display = 'flex';
-            document.getElementById('dashboardScreen').style.display = 'none';
-            showToast('Logged out successfully', 'info');
-        }
-
-        // Show Page
-        function showPage(pageName, element) {
-            if(element) {
-                document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
-                element.classList.add('active');
-            }
-            
-            document.querySelectorAll('[id^="page-"]').forEach(p => p.style.display = 'none');
-            document.getElementById('page-' + pageName).style.display = 'block';
-            
-            if (pageName === 'overview') loadDashboard();
-            if (pageName === 'issues') loadAllIssues();
-            if (pageName === 'departments') loadDepartments();
-            if (pageName === 'analytics') loadAnalytics();
-            if (pageName === 'users') loadUsers();
-        }
-
-        // Load Dashboard
-        async function loadDashboard() {
-            try {
-                const res = await fetch(`${API_BASE}/admin/dashboard`);
-                const data = await res.json();
-
-                document.getElementById('statTotal').textContent = data.total_issues || 0;
-                document.getElementById('statPending').textContent = data.pending_count || 0;
-                document.getElementById('statResolved').textContent = data.resolved_count || 0;
-                document.getElementById('statCritical').textContent = data.critical_count || 0;
-                document.getElementById('issueCountBadge').textContent = data.total_issues || 0;
-
-                renderStatusChart(data.status_labels, data.status_values);
-                renderDailyChart(data.daily_labels, data.daily_values);
-                renderRecentIssues(data.prioritized_issues || []);
-            } catch (err) {
-                showToast('Error loading dashboard', 'danger');
-            }
-        }
-
-        function renderRecentIssues(issues) {
-            const tbody = document.getElementById('recentIssuesTable');
-            if (!issues || issues.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-muted">No issues found</td></tr>';
-                return;
-            }
-            tbody.innerHTML = issues.map(i => `
-                <tr>
-                    <td class="fw-semibold">${i.issue?.substring(0, 40) || 'N/A'}...</td>
-                    <td>${i.location?.substring(0, 25) || '-'}</td>
-                    <td><span class="status-badge ${getStatusClass(i.status)}">${i.status || 'Pending'}</span></td>
-                    <td class="${getSeverityClass(i.severity)}">${i.severity || 'Low'}</td>
-                    <td class="${getPriorityClass(i.priority)}">${i.priority || 'Low'}</td>
-                    <td><i class="bi bi-star-fill text-warning"></i> ${i.upvotes || 0}</td>
-                    <td><button class="btn-action btn-view btn-sm" onclick="openIssueModal('${i.id}')">Edit</button></td>
-                </tr>
-            `).join('');
-        }
-
-        function getStatusClass(status) {
-            if(status?.includes('Resolved')) return 'status-resolved';
-            if(status === 'In Progress') return 'status-progress';
-            return 'status-pending';
-        }
-
-        function getSeverityClass(severity) {
-            if(severity === 'High') return 'severity-high';
-            if(severity === 'Medium') return 'severity-medium';
-            return 'severity-low';
-        }
-        
-        function getPriorityClass(priority) {
-            if(priority === 'Urgent') return 'priority-urgent';
-            if(priority === 'High') return 'priority-high';
-            if(priority === 'Medium') return 'priority-medium';
-            return 'priority-low';
-        }
-
-        function renderStatusChart(labels, values) {
-            new Chart(document.getElementById('statusChart'), {
-                type: 'doughnut',
-                data: {
-                    labels: labels || ['Pending', 'Resolved', 'In Progress'],
-                    datasets: [{ data: values || [10, 20, 5], backgroundColor: ['#ffc107', '#198754', '#0d6efd', '#6c757d'] }]
-                },
-                options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
-            });
-        }
-
-        function renderDailyChart(labels, values) {
-            new Chart(document.getElementById('dailyChart'), {
-                type: 'line',
-                data: {
-                    labels: labels || ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-                    datasets: [{ label: 'Issues', data: values || [5, 8, 3, 12, 7, 4, 9], borderColor: '#0d6efd', fill: true, backgroundColor: 'rgba(13, 110, 253, 0.1)', tension: 0.4 }]
-                },
-                options: { responsive: true, scales: { y: { beginAtZero: true } } }
-            });
-        }
-
-        // Load All Issues
-        async function loadAllIssues() {
-            try {
-                const res = await fetch(`${API_BASE}/issues/view`);
-                const data = await res.json();
-                allIssues = data.issues || [];
-                filteredIssues = [...allIssues];
-                currentPage = 1;
-                renderIssuesTable();
-            } catch (err) {
-                showToast('Error loading issues', 'danger');
-            }
-        }
-
-        function renderIssuesTable() {
-            const start = (currentPage - 1) * itemsPerPage;
-            const end = start + itemsPerPage;
-            const pageItems = filteredIssues.slice(start, end);
-            
-            const tbody = document.getElementById('issuesTable');
-            if (pageItems.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="9" class="text-center py-4 text-muted">No issues found</td></tr>';
-                return;
-            }
-            
-            tbody.innerHTML = pageItems.map((i, idx) => `
-                <tr>
-                    <td><input type="checkbox" class="form-check-input issue-checkbox" data-id="${i.id}"></td>
-                    <td class="text-muted">#${String(i.id).substring(0, 8)}</td>
-                    <td class="fw-semibold">${i.issue?.substring(0, 40) || 'N/A'}</td>
-                    <td>${i.location?.substring(0, 20) || '-'}</td>
-                    <td><span class="status-badge ${getStatusClass(i.status)}">${i.status || 'Pending'}</span></td>
-                    <td class="${getSeverityClass(i.severity)}">${i.severity || 'Low'}</td>
-                    <td>${i.upvotes || 0}</td>
-                    <td>${i.assigned_to || '-'}</td>
-                    <td>
-                        <button class="btn-action btn-edit" onclick="openIssueModal('${i.id}')" title="Edit">
-                            <i class="bi bi-pencil"></i>
-                        </button>
-                        <button class="btn-action btn-delete" onclick="deleteIssue('${i.id}')" title="Delete">
-                            <i class="bi bi-trash"></i>
-                        </button>
-                    </td>
-                </tr>
-            `).join('');
-            
-            // Update pagination
-            document.getElementById('paginationInfo').textContent = `Showing ${start + 1}-${Math.min(end, filteredIssues.length)} of ${filteredIssues.length}`;
-            renderPagination();
-        }
-
-        function renderPagination() {
-            const totalPages = Math.ceil(filteredIssues.length / itemsPerPage);
-            let html = '';
-            
-            html += `<li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
-                <a class="page-link" href="#" onclick="changePage(${currentPage - 1})">Prev</a></li>`;
-            
-            for(let i = 1; i <= Math.min(5, totalPages); i++) {
-                html += `<li class="page-item ${currentPage === i ? 'active' : ''}">
-                    <a class="page-link" href="#" onclick="changePage(${i})">${i}</a></li>`;
-            }
-            
-            html += `<li class="page-item ${currentPage >= totalPages ? 'disabled' : ''}">
-                <a class="page-link" href="#" onclick="changePage(${currentPage + 1})">Next</a></li>`;
-            
-            document.getElementById('pagination').innerHTML = html;
-        }
-
-        function changePage(page) {
-            currentPage = page;
-            renderIssuesTable();
-        }
-
-        function filterIssues() {
-            const search = document.getElementById('searchInput').value.toLowerCase();
-            const status = document.getElementById('statusFilter').value;
-            const severity = document.getElementById('severityFilter').value;
-            const priority = document.getElementById('priorityFilter').value;
-            
-            filteredIssues = allIssues.filter(i => {
-                const matchSearch = !search || (i.issue?.toLowerCase().includes(search) || i.location?.toLowerCase().includes(search));
-                const matchStatus = !status || i.status === status;
-                const matchSeverity = !severity || i.severity === severity;
-                const matchPriority = !priority || i.priority === priority;
-                return matchSearch && matchStatus && matchSeverity && matchPriority;
-            });
-            
-            currentPage = 1;
-            renderIssuesTable();
-        }
-
-        function clearFilters() {
-            document.getElementById('searchInput').value = '';
-            document.getElementById('statusFilter').value = '';
-            document.getElementById('severityFilter').value = '';
-            document.getElementById('priorityFilter').value = '';
-            filterIssues();
-        }
-
-        function toggleSelectAll() {
-            const checked = document.getElementById('selectAll').checked;
-            document.querySelectorAll('.issue-checkbox').forEach(cb => cb.checked = checked);
-        }
-
-        // Issue Modal
-        let currentIssueId = null;
-        
-        function openIssueModal(issueId) {
-            currentIssueId = issueId;
-            const issue = allIssues.find(i => i.id === issueId);
-            if(issue) {
-                document.getElementById('modalStatus').value = issue.status || 'Pending';
-                document.getElementById('modalDepartment').value = issue.assigned_to || '';
-                document.getElementById('modalSeverity').value = issue.severity || 'Low';
-                document.getElementById('modalPriority').value = issue.priority || 'Low';
-            }
-            issueModal.show();
-        }
-
-        async function saveIssueChanges() {
-            if(!currentIssueId) return;
-            
-            const status = document.getElementById('modalStatus').value;
-            const assigned_to = document.getElementById('modalDepartment').value;
-            const severity = document.getElementById('modalSeverity').value;
-            const priority = document.getElementById('modalPriority').value;
-            
-            try {
-                const formData = new FormData();
-                formData.append('status', status);
-                formData.append('assigned_to', assigned_to);
-                formData.append('severity', severity);
-                formData.append('priority', priority);
-                
-                const res = await fetch(`${API_BASE}/admin/issues/${currentIssueId}/status`, {
-                    method: 'POST',
-                    body: new URLSearchParams({ status, status_filter: 'all' })
-                });
-                
-                if(res.ok) {
-                    showToast('Issue updated successfully!', 'success');
-                    issueModal.hide();
-                    loadAllIssues();
-                    loadDashboard();
-                } else {
-                    showToast('Failed to update issue', 'danger');
-                }
-            } catch(err) {
-                showToast('Error updating issue', 'danger');
-            }
-        }
-
-        async function deleteIssue(issueId) {
-            if(!confirm('Are you sure you want to delete this issue?')) return;
-            showToast('Delete functionality - connect to API', 'warning');
-        }
-
-        // Bulk Actions
-        async function bulkUpdateStatus(status) {
-            const selected = document.querySelectorAll('.issue-checkbox:checked');
-            if(selected.length === 0) { showToast('Select issues first', 'warning'); return; }
-            showToast(`Updating ${selected.length} issues to ${status}...`, 'info');
-        }
-
-        async function bulkDelete() {
-            showToast('Bulk delete - connect to API', 'warning');
-        }
-
-        // Run Clustering
-        async function runClustering() {
-            showToast('Running AI clustering...', 'info');
-            try {
-                const res = await fetch(`${API_BASE}/api/cluster-issues`);
-                const data = await res.json();
-                
-                if(data.clusters && data.clusters.length > 0) {
-                    showToast(`Found ${data.total_clusters} issue clusters!`, 'success');
-                    displayClusters(data.clusters);
-                } else {
-                    showToast('No clusters found', 'info');
-                }
-            } catch(err) {
-                showToast('Error running clustering: ' + err.message, 'danger');
-            }
-        }
-        
-        function displayClusters(clusters) {
-            let html = '<div class="row">';
-            clusters.forEach(c => {
-                html += `<div class="col-md-6 mb-3">
-                    <div class="card">
-                        <div class="card-header bg-info text-white">Cluster ${c.cluster_id + 1} - ${c.count} issues</div>
-                        <div class="card-body">
-                            <p class="mb-2"><strong>Representative Issue:</strong></p>
-                            <p class="text-muted">${c.representative?.issue?.substring(0, 80) || 'N/A'}...</p>
-                            <button class="btn btn-sm btn-outline-primary">View All in Cluster</button>
-                        </div>
-                    </div>
-                </div>`;
-            });
-            html += '</div>';
-            document.getElementById('recentIssuesTable').innerHTML = `<tr><td colspan="8">${html}</td></tr>`;
-        }
-        
-        // AI Natural Language Query
-        async function runAIQuery() {
-            const query = document.getElementById('aiQueryInput').value;
-            if(!query) {
-                showToast('Please enter a query', 'warning');
-                return;
-            }
-            
-            showToast('Processing AI query...', 'info');
-            try {
-                const res = await fetch(`${API_BASE}/api/natural-query`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ query })
-                });
-                const data = await res.json();
-                
-                if(data.issues && data.issues.length > 0) {
-                    allIssues = data.issues;
-                    currentPage = 1;
-                    renderIssuesTable();
-                    showToast(`Found ${data.count} matching issues for "${query}"`, 'success');
-                } else {
-                    showToast('No issues found matching your query', 'info');
-                }
-            } catch(err) {
-                showToast('Error: ' + err.message, 'danger');
-            }
-        }
-        
-        // Detect Anomalies
-        async function detectAnomalies() {
-            showToast('Analyzing patterns...', 'info');
-            try {
-                const res = await fetch(`${API_BASE}/api/detect-anomalies`);
-                const data = await res.json();
-                
-                let msg = `Total: ${data.total_issues} | Daily Avg: ${data.daily_average}`;
-                if(data.anomalies && data.anomalies.length > 0) {
-                    msg += ` | ${data.anomalies.length} anomalies detected!`;
-                }
-                showToast(msg, 'warning');
-                
-                // Show hotspots
-                if(data.location_hotspots) {
-                    console.log('Location Hotspots:', data.location_hotspots);
-                }
-            } catch(err) {
-                showToast('Error: ' + err.message, 'danger');
-            }
-        }
-
-        // Departments
-        async function loadDepartments() {
-            try {
-                const res = await fetch(`${API_BASE}/admin/dashboard`);
-                const data = await res.json();
-                
-                // Category chart
-                new Chart(document.getElementById('categoryChart'), {
-                    type: 'bar',
-                    data: {
-                        labels: data.category_labels || ['Pothole', 'Garbage', 'Street Light'],
-                        datasets: [{ label: 'Issues', data: data.category_values || [10, 5, 3], backgroundColor: '#0d6efd', borderRadius: 8 }]
-                    },
-                    options: { responsive: true, indexAxis: 'y' }
-                });
-                
-                // Department table
-                const tbody = document.getElementById('deptTable');
-                if(data.department_rankings?.length > 0) {
-                    tbody.innerHTML = data.department_rankings.map((d, i) => `
-                        <tr>
-                            <td><span class="badge ${i === 0 ? 'bg-warning' : i === 1 ? 'bg-secondary' : 'bg-light text-dark'}">#${i+1}</span></td>
-                            <td>${d._id || 'N/A'}</td>
-                            <td>${d.resolved_count || 0}</td>
-                            <td>${d.resolved_count || 0}</td>
-                            <td>${d.avg_hours?.toFixed(1) || 0}h</td>
-                            <td><div class="progress" style="height: 8px;"><div class="progress-bar bg-success" style="width: ${Math.max(0, 100 - (d.avg_hours || 0) * 2)}%"></div></div></td>
-                        </tr>
-                    `).join('');
-                } else {
-                    tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-muted">No department data</td></tr>';
-                }
-            } catch(err) {
-                showToast('Error loading departments', 'danger');
-            }
-        }
-
-        // Analytics
-        async function loadAnalytics() {
-            try {
-                const res = await fetch(`${API_BASE}/admin/dashboard`);
-                const data = await res.json();
-                
-                const total = data.total_issues || 1;
-                const resolved = data.resolved_count || 0;
-                document.getElementById('resRate').textContent = Math.round((resolved / total) * 100) + '%';
-                document.getElementById('avgTime').textContent = '24 hrs';
-                document.getElementById('totalUsers').textContent = '156';
-                
-                // Monthly chart
-                new Chart(document.getElementById('monthlyChart'), {
-                    type: 'bar',
-                    data: {
-                        labels: data.daily_labels?.slice(-7) || ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-                        datasets: [{ label: 'Issues', data: data.daily_values?.slice(-7) || [5, 8, 3, 12, 7, 4, 9], backgroundColor: '#0d6efd', borderRadius: 8 }]
-                    },
-                    options: { responsive: true }
-                });
-                
-                // Top categories
-                new Chart(document.getElementById('topCatChart'), {
-                    type: 'doughnut',
-                    data: {
-                        labels: data.category_labels?.slice(0, 5) || ['Pothole', 'Garbage', 'Light'],
-                        datasets: [{ data: data.category_values?.slice(0, 5) || [10, 5, 3], backgroundColor: ['#0d6efd', '#198754', '#ffc107', '#dc3545', '#6c757d'] }]
-                    },
-                    options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
-                });
-            } catch(err) {
-                showToast('Error loading analytics', 'danger');
-            }
-        }
-
-        // Users
-        async function loadUsers() {
-            // Placeholder - would need API endpoint for users
-            document.getElementById('usersTable').innerHTML = '<tr><td colspan="7" class="text-center py-4 text-muted">Connect to users API endpoint</td></tr>';
-        }
-
-        function filterUsers() {
-            // Implement if needed
-        }
-
-        // Export
-        function exportAllData() {
-            exportData('issues');
-        }
-
-        function exportData(type) {
-            if(type === 'issues') {
-                let csv = 'ID,Issue,Location,Status,Severity,Priority,Upvotes,Assigned To,Created\n';
-                allIssues.forEach(i => {
-                    csv += `"${i.id}","${i.issue}","${i.location}","${i.status}","${i.severity}","${i.priority || 'Low'}",${i.upvotes},"${i.assigned_to || ''}","${i.created_at || ''}"\n`;
-                });
-                downloadCSV(csv, 'issues_export.csv');
-                showToast('Issues exported!', 'success');
-            } else if(type === 'users') {
-                showToast('User export - connect to API', 'info');
-            } else {
-                showToast('Summary report generated!', 'success');
-            }
-        }
-
-        function downloadCSV(content, filename) {
-            const blob = new Blob([content], { type: 'text/csv' });
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = filename;
-            a.click();
-        }
-
-        function refreshData() {
-            loadDashboard();
-            showToast('Data refreshed!', 'success');
-        }
-
-        // Toast
-        function showToast(message, type = 'info') {
-            const container = document.getElementById('toastContainer');
-            const toast = document.createElement('div');
-            toast.className = `toast align-items-center text-white bg-${type} border-0 show`;
-            toast.setAttribute('role', 'alert');
-            toast.setAttribute('aria-live', 'assertive');
-            toast.setAttribute('aria-atomic', 'true');
-            toast.style.marginBottom = '10px';
-            toast.innerHTML = `
-                <div class="d-flex">
-                    <div class="toast-body">${message}</div>
-                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
-                </div>
-            `;
-            container.appendChild(toast);
-            setTimeout(() => toast.remove(), 3000);
-        }
-    </script>
+    <script src="src/admin-logic.js"></script>
 </body>
 </html>

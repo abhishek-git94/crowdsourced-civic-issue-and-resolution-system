@@ -32,12 +32,21 @@ def create_app(config_class=Config):
     app.config.from_object(config_class)
     
     # Enable CORS
-    CORS(app)
+    CORS(app, supports_credentials=True)
 
 
     # Initialize extensions
     init_db(app)
     login_manager.init_app(app)
+    
+    # Handle JSON for unauthorized requests
+    @login_manager.unauthorized_handler
+    def unauthorized():
+        from flask import request, jsonify
+        if request.is_json or 'application/json' in request.headers.get('Accept', ''):
+            return jsonify({"success": False, "message": "Unauthorized"}), 401
+        return redirect(url_for("auth.login"))
+
     login_manager.login_view = "auth.login"
     login_manager.login_message_category = "warning"
     oauth.init_app(app)
@@ -62,6 +71,29 @@ def create_app(config_class=Config):
             return User.objects(id=user_id).first()
         except Exception:
             return None
+    
+    # Mobile API Authentication - Stateless support
+    @login_manager.request_loader
+    def request_loader(request):
+        user_id = request.headers.get('X-User-ID')
+        if user_id:
+            try:
+                user = User.objects(id=user_id).first()
+                if user:
+                    return user
+            except Exception:
+                pass
+        return None
+
+    # Ensure session is populated if using headers (backward compatibility for some routes)
+    @app.before_request
+    def sync_session():
+        from flask import session
+        from flask_login import current_user
+        if current_user.is_authenticated and 'user_id' not in session:
+            session['user_id'] = str(current_user.id)
+            session['user_name'] = current_user.name
+            session['user_role'] = current_user.role
 
     # Register Blueprints
     from .routes.auth import auth_bp
@@ -82,6 +114,14 @@ def create_app(config_class=Config):
 
     # Ensure upload directory exists
     os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+
+    # Modern Admin Dashboard (Indore Portal) - Serve as static
+    from flask import send_from_directory
+    @app.route('/admin-portal/')
+    @app.route('/admin-portal/<path:path>')
+    def serve_admin_portal(path='index.html'):
+        admin_dir = os.path.abspath(os.path.join(app.root_path, '../../admin_dashboard'))
+        return send_from_directory(admin_dir, path)
 
     # Create database tables (optional, usually handled by migrations)
     # Base.metadata.create_all(bind=engine)

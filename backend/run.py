@@ -1,17 +1,22 @@
-from app import create_app
 import os
+import warnings
+
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3' 
+os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'
+warnings.filterwarnings("ignore", category=DeprecationWarning)
+warnings.filterwarnings("ignore", message=".*authlib.jose module is deprecated.*")
+
+from app import create_app
 
 app = create_app()
 
 if __name__ == "__main__":
-    # Bind to 0.0.0.0 to allow access from any device on network
-    # Get port from environment or use default 5000
     port = int(os.getenv("PORT", 5000))
     host = os.getenv("HOST", "0.0.0.0")
     
-    print(f"\n🚀 Jan Suvidha Backend Running!")
-    print(f"   Local:   http://127.0.0.1:{port}")
-    print(f"   Network: http://{host}:{port}")
-    print(f"\n   Use this URL for mobile app & admin dashboard\n")
+    print(f"\nJan Suvidha System Active!")
+    print(f"   Backend API:       http://127.0.0.1:{port}")
+    print(f"   Admin Dashboard:   http://127.0.0.1:{port}/admin-portal/")
+    print(f"\n   Use the Backend API URL for mobile app and dashboard configuration.\n")
     
     app.run(debug=True, host=host, port=port)

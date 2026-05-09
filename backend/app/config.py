@@ -11,7 +11,7 @@ class Config:
     }
     
     # Upload Settings
-    UPLOAD_FOLDER = os.path.join(BASE_DIR, "frontend", "static", "uploads")
+    UPLOAD_FOLDER = os.path.join(BASE_DIR, "uploads")
     ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg"}
     
     # Duplicate Detection Settings
