@@ -44,60 +44,32 @@ from .advanced_ai import (
 )
 
 # ── Keyword-based civic detection (no heavy deps) ─────────────────────────────
-CIVIC_KEYWORD_MAP = {
-    'pothole':          ('roads',          85),
-    'road':             ('roads',          70),
-    'crack':            ('roads',          72),
-    'broken road':      ('roads',          90),
-    'damage':           ('infrastructure', 68),
-    'garbage':          ('sanitation',     88),
-    'trash':            ('sanitation',     85),
-    'waste':            ('sanitation',     82),
-    'litter':           ('sanitation',     78),
-    'water':            ('water',          80),
-    'leak':             ('water',          85),
-    'drain':            ('water',          80),
-    'flood':            ('water',          90),
-    'overflow':         ('water',          85),
-    'sewage':           ('water',          88),
-    'light':            ('electricity',    78),
-    'electric':         ('electricity',    85),
-    'wire':             ('electricity',    88),
-    'power':            ('electricity',    80),
-    'dark':             ('electricity',    70),
-    'pole':             ('electricity',    75),
-    'traffic':          ('traffic',        80),
-    'signal':           ('traffic',        85),
-    'sign':             ('traffic',        72),
-    'park':             ('parks',          75),
-    'tree':             ('parks',          70),
-    'bench':            ('parks',          68),
-}
+# NOTE: _keyword_detect is now a thin wrapper around the unified classify_issue_type
+# engine from civic_ai.py so both paths stay consistent.
 
-CATEGORY_OBJECTS = {
-    'roads':         [{'label': 'pothole',          'confidence': 78}],
-    'sanitation':    [{'label': 'garbage_heap',     'confidence': 82}],
-    'water':         [{'label': 'water_leak',       'confidence': 80}],
-    'electricity':   [{'label': 'broken_streetlight','confidence': 75}],
-    'traffic':       [{'label': 'traffic_signal',   'confidence': 77}],
-    'parks':         [{'label': 'broken_bench',     'confidence': 70}],
-    'infrastructure':[{'label': 'infrastructure_issue','confidence': 72}],
+CATEGORY_DEFAULT_OBJECTS = {
+    'roads':          [{'label': 'pothole',              'confidence': 78}],
+    'sanitation':     [{'label': 'garbage_heap',         'confidence': 82}],
+    'water':          [{'label': 'water_leak',           'confidence': 80}],
+    'electricity':    [{'label': 'broken_street_light',  'confidence': 75}],
+    'traffic':        [{'label': 'traffic_signal_broken','confidence': 77}],
+    'parks':          [{'label': 'broken_bench',         'confidence': 70}],
+    'infrastructure': [{'label': 'building_damage',      'confidence': 65}],
 }
 
 
 def _keyword_detect(text: str):
-    """Return (category, confidence, detected_objects) from plain text."""
-    text_lower = (text or '').lower()
-    best_cat = 'infrastructure'
-    best_conf = 60
+    """Return (category, confidence, detected_objects) using the unified engine."""
+    try:
+        from .civic_ai import classify_issue_type
+        cat, sub, conf = classify_issue_type(text or '', [])
+    except Exception:
+        cat, sub, conf = 'infrastructure', 'building_damage', 50.0
 
-    for kw, (cat, conf) in CIVIC_KEYWORD_MAP.items():
-        if kw in text_lower and conf > best_conf:
-            best_cat = cat
-            best_conf = conf
-
-    objects = CATEGORY_OBJECTS.get(best_cat, [{'label': 'civic_issue', 'confidence': best_conf}])
-    return best_cat, best_conf, objects
+    # Build detected_objects list with the matched subclass
+    obj_label = sub if sub else cat
+    objects   = [{'label': obj_label, 'confidence': round(conf, 1)}]
+    return cat, round(conf, 1), objects
 
 
 # ── Scoring helpers ───────────────────────────────────────────────────────────
@@ -204,10 +176,21 @@ class CivicAIAnalyzer:
 
         # YOLO – optional
         self.yolo = None
+        self.yolo_classes = None
         if YOLO_AVAILABLE:
             try:
-                self.yolo = YOLO(self.yolo_model_path)
-                print(f"[AI] YOLO model loaded from {self.yolo_model_path}")
+                # Try custom model first, fallback to default
+                if os.path.exists(self.yolo_model_path):
+                    self.yolo = YOLO(self.yolo_model_path)
+                    # Get custom model classes
+                    self.yolo_classes = self.yolo.names
+                    print(f"[AI] Custom YOLO model loaded: {len(self.yolo_classes)} classes")
+                    print(f"[AI] Classes: {list(self.yolo_classes.values())}")
+                else:
+                    # Download default model
+                    self.yolo = YOLO('yolov8n.pt')
+                    self.yolo_classes = self.yolo.names
+                    print(f"[AI] Using default YOLO model (yolov8n.pt)")
             except Exception as e:
                 print(f"[AI] YOLO load failed: {e} – using keyword fallback")
 
@@ -235,51 +218,162 @@ class CivicAIAnalyzer:
     # ── Image analysis ────────────────────────────────────────────────────────
 
     def analyze_image(self, image_path):
-        """Detect objects in image. Falls back to filename/path clues."""
-        # Try YOLO first
+        """Detect objects in image using YOLO only - NO FALLBACK"""
+        
+        # Map custom model classes to system categories
+        CLASS_TO_CATEGORY_MAP = {
+            'Pothole Issues': ('roads', 'pothole'),
+            'Damaged Road issues': ('roads', 'road_damage'),
+            'Illegal Parking Issues': ('traffic', 'illegal_parking'),
+            'Broken Road Sign Issues': ('roads', 'sign_damage'),
+            'Fallen trees': ('parks', 'fallen_tree'),
+            'Littering/Garbage on Public Places': ('sanitation', 'garbage'),
+            'Vandalism Issues': ('infrastructure', 'vandalism'),
+            'Dead Animal Pollution': ('sanitation', 'dead_animal'),
+            'Damaged concrete structures': ('infrastructure', 'structure_damage'),
+            'Damaged Electric wires and poles': ('electricity', 'wire_damage'),
+        }
+        
+        print(f"[AI] Starting YOLO detection on: {image_path}")
+        
         if self.yolo is not None and CV2_AVAILABLE:
             try:
                 image = cv2.imread(image_path)
                 if image is not None:
-                    # ── Speed fix: resize to 640 (YOLO native res) before inference ──
+                    # Resize to 320 for FASTER YOLO
                     h, w = image.shape[:2]
-                    if max(h, w) > 640:
-                        scale = 640 / max(h, w)
-                        image = cv2.resize(image, (int(w * scale), int(h * scale)),
+                    print(f"[AI] Original Image size: {w}x{h}")
+                    
+                    target_size = 320
+                    if max(h, w) > target_size:
+                        scale = target_size / max(h, w)
+                        image = cv2.resize(image, (int(w*scale), int(h*scale)),
                                            interpolation=cv2.INTER_AREA)
-                    image = enhance_image(image)
-                    results = self.yolo(image, verbose=False, imgsz=640, conf=0.20)
+                        print(f"[AI] Resized to: {int(w*scale)}x{int(h*scale)} (faster)")
+                    
+                    # Use smaller imgsz for faster inference
+                    results = self.yolo(image, verbose=False, imgsz=target_size, conf=0.05)
+                    
                     detected = []
+                    raw_detections = []
+                    
                     for r in results:
                         if r.boxes is None:
+                            print("[AI] No boxes detected")
                             continue
+                        
+                        print(f"[AI] Found {len(r.boxes)} boxes")
+                        
                         for box in r.boxes:
                             cls_id = int(box.cls[0])
-                            label  = r.names[cls_id]
-                            conf   = float(box.conf[0])
-                            if conf > 0.15:
-                                detected.append({'label': label, 'confidence': round(conf * 100, 1)})
+                            label = self.yolo_classes[cls_id] if self.yolo_classes else r.names[cls_id]
+                            conf = float(box.conf[0]) * 100
+                            
+                            raw_detections.append({
+                                'label': label,
+                                'confidence': round(conf, 1),
+                                'class_id': cls_id
+                            })
+                            
+                            # Map to category
+                            category, subclass = CLASS_TO_CATEGORY_MAP.get(label, ('infrastructure', label.lower()))
+                            
+                            if conf > 5:
+                                detected.append({
+                                    'label': label,
+                                    'confidence': round(conf, 1),
+                                    'category': category,
+                                    'subclass': subclass
+                                })
+                    
+                    print(f"[AI] Raw detections: {raw_detections}")
+                    print(f"[AI] Filtered detections (>5%): {detected}")
+                    
                     if detected:
+                        print(f"[AI] YOLO SUCCESS: {detected}")
                         return detected
+                    else:
+                        print("[AI] YOLO: No objects detected above 5% threshold")
+                        return []
+                else:
+                    print(f"[AI] ERROR: Could not read image file: {image_path}")
+                    return []
             except Exception as e:
-                print(f"[AI] YOLO detection error: {e}")
-
-        # Keyword fallback from filename
-        fname = os.path.basename(image_path).lower()
-        _, conf, objects = _keyword_detect(fname)
-        return objects
+                print(f"[AI] YOLO detection ERROR: {e}")
+                import traceback
+                traceback.print_exc()
+                return []
+        else:
+            print("[AI] YOLO not available - returning empty")
+            return []
 
     # ── Civic categorisation ──────────────────────────────────────────────────
 
-    def categorize_issue(self, objects):
-        labels = [obj['label'].lower() for obj in objects]
-        for category, keywords in self.civic_mapping.items():
-            for kw in keywords:
-                if any(kw in lbl for lbl in labels):
-                    return category
-        if any('road' in lbl or 'street' in lbl for lbl in labels):
-            return 'road_damage'
-        return 'general_infrastructure'
+    def categorize_issue(self, objects, user_description=""):
+        from .civic_ai import classify_issue_type
+        best_type, best_subclass, confidence = classify_issue_type(user_description, objects)
+        return best_type, best_subclass, confidence
+
+    def categorize_issue_from_description(self, description):
+        """Categorize based on user description text only - NO FALLBACK"""
+        if not description:
+            return 'general', 'unknown', 30
+        
+        desc_lower = description.lower()
+        
+        # Direct keyword matching for your 10 classes
+        category_mapping = {
+            # Roads
+            'roads': ['road', 'road damage', 'road broken', 'road crack', 'asphalt', 'pavement'],
+            'pothole': ['pothole', 'potholes', 'hole in road', 'hole on road', 'road hole'],
+            'road_damage': ['road damage', 'road broken', 'road crack', 'road sink'],
+            'sign_damage': ['road sign', 'sign broken', 'sign damaged', 'traffic sign'],
+            # Traffic
+            'illegal_parking': ['illegal parking', 'wrong parking', 'parking violation', 'parked illegally'],
+            # Parks
+            'fallen_tree': ['fallen tree', 'tree fallen', 'tree down', 'tree fallen'],
+            # Sanitation
+            'garbage': ['garbage', 'litter', 'waste', 'trash', 'dirty', 'filth', 'waste dump'],
+            'dead_animal': ['dead animal', 'animal dead', 'dead dog', 'dead animal'],
+            # Infrastructure
+            'vandalism': ['vandalism', 'vandalized', 'graffiti', 'damaged deliberately'],
+            'structure_damage': ['concrete', 'structure damage', 'broken wall', 'damaged structure'],
+            # Electricity
+            'wire_damage': ['electric wire', 'wire broken', 'electrical wire', 'pole wire', 'hanging wire'],
+        }
+        
+        # Map to system categories
+        system_category_map = {
+            'roads': 'roads',
+            'pothole': 'roads',
+            'road_damage': 'roads',
+            'sign_damage': 'roads',
+            'illegal_parking': 'traffic',
+            'fallen_tree': 'parks',
+            'garbage': 'sanitation',
+            'dead_animal': 'sanitation',
+            'vandalism': 'infrastructure',
+            'structure_damage': 'infrastructure',
+            'wire_damage': 'electricity',
+        }
+        
+        # Find matching sub-category
+        best_match = None
+        best_score = 0
+        
+        for sub_cat, keywords in category_mapping.items():
+            score = sum(1 for kw in keywords if kw in desc_lower)
+            if score > best_score:
+                best_score = score
+                best_match = sub_cat
+        
+        if best_match:
+            category = system_category_map.get(best_match, 'general')
+            confidence = min(90, 50 + best_score * 10)
+            print(f"[AI] Description match: {best_match} (score: {best_score})")
+            return category, best_match, confidence
+        
+        return 'general', 'unknown', 30
 
     # ── RAG search ────────────────────────────────────────────────────────────
 
@@ -302,9 +396,9 @@ class CivicAIAnalyzer:
 
     # ── Description generation ────────────────────────────────────────────────
 
-    def generate_description(self, objects, location="unknown location", category=None):
-        if not category:
-            category = self.categorize_issue(objects)
+    def generate_description(self, objects, location="unknown location", category=None, sub_category=None, user_description=""):
+        if not category or not sub_category:
+            category, sub_category, _ = self.categorize_issue(objects, user_description)
 
         obj_summary = ", ".join([f"{o['label']} ({o['confidence']}%)" for o in objects[:3]])
         context = ""
@@ -312,15 +406,18 @@ class CivicAIAnalyzer:
         if similar:
             context = f"\n\nNOTE: This location has {len(similar)} similar past issue(s)."
 
+        user_context = f"\nUSER PROVIDED DESCRIPTION: {user_description}\n" if user_description else ""
+
         # Try Ollama
         if OLLAMA_AVAILABLE:
             prompt = (
                 f"You are writing a civic infrastructure issue report for municipal authorities.\n\n"
                 f"LOCATION: {location}\n"
                 f"DETECTED IN IMAGE: {obj_summary}\n"
-                f"ISSUE CATEGORY: {category}\n"
+                f"ISSUE CATEGORY: {category} ({sub_category})\n"
+                f"{user_context}"
                 f"{context}\n\n"
-                f"Write a professional 2-3 sentence description. Be factual, no markdown.\n"
+                f"Write a professional 2-3 sentence description. Be factual, no markdown. Incorporate the user's description if provided.\n"
                 f"Write the description now:"
             )
             try:
@@ -334,59 +431,130 @@ class CivicAIAnalyzer:
             except Exception as e:
                 print(f"[AI] Ollama error: {e}")
 
-        # Deterministic fallback description
+        # Deterministic fallback description - much better now
+        if user_description and len(user_description.strip()) > 10:
+            return user_description
+
         cat_display = category.replace('_', ' ').title()
+        sub_display = sub_category.replace('_', ' ').title() if sub_category else 'Unknown'
+        
+        # Custom descriptions for trained model classes
+        descriptions = {
+            'pothole': f"A pothole has been detected on the road at {location}, creating a safety hazard for vehicles. {obj_summary}",
+            'road_damage': f"Road surface damage has been identified at {location}. {obj_summary}",
+            'illegal_parking': f"Illegal parking violation detected at {location}, causing traffic obstruction. {obj_summary}",
+            'sign_damage': f"A damaged road sign has been found at {location}, affecting road safety. {obj_summary}",
+            'fallen_tree': f"A fallen tree has been reported at {location}, blocking the road and creating hazard. {obj_summary}",
+            'garbage': f"Littering and garbage accumulation detected at {location}, affecting sanitation. {obj_summary}",
+            'vandalism': f"Vandalism has been reported at {location}, damaging public property. {obj_summary}",
+            'dead_animal': f"Dead animal pollution detected at {location}, creating health hazard. {obj_summary}",
+            'structure_damage': f"Damaged concrete structure at {location}, posing safety risk. {obj_summary}",
+            'wire_damage': f"Damaged electrical wires/poles at {location}, creating electrical safety hazard. {obj_summary}",
+        }
+        
+        if sub_category in descriptions:
+            return descriptions[sub_category]
+        
+        if sub_category == 'pothole':
+            return f"A pothole has been detected on the road at {location}, causing potential hazard to vehicles. {obj_summary}."
+        if sub_category == 'broken_street_light':
+            return f"A broken or non-functional street light has been identified at {location}, leading to poor visibility and safety concerns. {obj_summary}."
+        if sub_category == 'garbage_heap':
+            return f"A significant accumulation of garbage has been reported at {location}, requiring immediate clearance for sanitation. {obj_summary}."
+
         return (
-            f"A {cat_display} issue has been detected at {location}. "
-            f"The image analysis identified: {obj_summary}. "
-            f"This requires prompt attention from the concerned department to ensure public safety."
+            f"A {sub_display} issue (Category: {cat_display}) has been detected at {location}. "
+            f"Image analysis confirmed: {obj_summary}. "
+            f"This requires prompt attention from the concerned department to ensure public safety and maintain civic standards."
         )
 
     # ── Full analysis ─────────────────────────────────────────────────────────
 
     def analyze_civic_issue(self, image_path, location="unknown location",
-                            existing_issues=None, department=None):
+                            existing_issues=None, department=None, user_description=""):
         import time
+        import json
         t_start = time.time()
 
+        print(f"[AI] ====== Starting analysis ======")
+        
         objects  = self.analyze_image(image_path)
-        category = self.categorize_issue(objects)
-        description = self.generate_description(objects, location, category)
+        
+        print(f"[AI] YOLO returned {len(objects)} objects")
+        
+        # Use YOLO's category if available
+        detected_category = None
+        detected_subcategory = None
+        for obj in objects:
+            if 'category' in obj:
+                detected_category = obj['category']
+                detected_subcategory = obj.get('subclass', '')
+                break
+        
+        # If YOLO detected category, use it
+        if detected_category:
+            category = detected_category
+            sub_category = detected_subcategory
+            cat_confidence = max((obj['confidence'] for obj in objects), default=85)
+            print(f"[AI] SUCCESS - Using YOLO category: {category} / {sub_category}")
+        else:
+            # NO FALLBACK - Use user description to determine category
+            print(f"[AI] YOLO no detection - Using description: '{user_description[:50]}...'")
+            category, sub_category, cat_confidence = self.categorize_issue_from_description(user_description)
+            print(f"[AI] Category from description: {category} / {sub_category}")
+        
+        description = self.generate_description(objects, location, category, sub_category, user_description=user_description)
 
-        max_confidence = max((obj['confidence'] for obj in objects), default=60)
+        max_confidence = max((obj['confidence'] for obj in objects), default=cat_confidence)
 
-        # Duplicate detection – skip if image analysis already took > 5s to stay responsive
+        # Skip slow duplicate detection - removed for speed (was taking 15+ seconds)
         similar_issues = []
-        elapsed = time.time() - t_start
-        if elapsed < 5 and existing_issues:
-            try:
-                from ..utils.duplicate_detector import get_local_embedding, find_similar_issues
-                embedding = get_local_embedding(description)
-                similar_issues = find_similar_issues(existing_issues, embedding, top_k=10, min_score=0.5)
-            except Exception as e:
-                print(f"[AI] Duplicate detection failed: {e}")
+        is_duplicate = False
+        duplicate_id = None
 
-        severity = calculate_dynamic_severity(max_confidence, similar_issues)
-        priority = calculate_priority(severity, category, department, location)
-        is_duplicate, duplicate_id = check_duplicate_threshold(similar_issues, min_similarity=0.75)
+        # Fast severity calculation without embedding
+        severity = max_confidence / 10
+        if severity >= 8:
+            severity_level = 'Critical'
+        elif severity >= 6:
+            severity_level = 'High'
+        elif severity >= 4:
+            severity_level = 'Medium'
+        else:
+            severity_level = 'Low'
+            
+        priority = calculate_priority(severity_level, category, department, location)
 
         sentiment_result = analyze_sentiment(description)
         assigned_dept, dept_confidence = smart_assign_department(category, description, objects)
-        predicted_days = predict_resolution_days(category, severity)
+        predicted_days = predict_resolution_days(category, severity_level)
 
-        if sentiment_result['urgency_score'] > 0.6 and severity == 'Low':
-            severity = 'Medium'
-            priority = calculate_priority(severity, category, assigned_dept, location)
+        if sentiment_result['urgency_score'] > 0.6 and severity_level == 'Low':
+            severity_level = 'Medium'
+            priority = calculate_priority(severity_level, category, assigned_dept, location)
 
         elapsed_total = round(time.time() - t_start, 2)
         print(f"[AI] analyze_civic_issue completed in {elapsed_total}s")
 
+        analysis_report = {
+            'timestamp': datetime.now().isoformat(),
+            'model_info': {'text': self.text_model, 'vision': 'YOLOv8n'},
+            'detections': objects,
+            'reasoning': f"Classified as {sub_category} under {category} with {cat_confidence}% confidence based on keyword and visual analysis.",
+            'environmental_factors': {
+                'location_context': 'High priority area' if 'hospital' in location.lower() or 'school' in location.lower() else 'Normal',
+                'sentiment_urgency': round(sentiment_result['urgency_score'], 2)
+            }
+        }
+
         return {
             'description':              description,
             'category':                 category,
+            'sub_category':             sub_category,
             'detected_objects':         objects,
             'confidence':               max_confidence,
-            'severity':                 severity,
+            'severity':                 severity_level,
+            'severity_score':           severity,
             'priority':                 priority,
             'similar_issues_count':     len(similar_issues),
             'duplicate_detected':       is_duplicate,
@@ -398,7 +566,29 @@ class CivicAIAnalyzer:
             'department_confidence':    round(dept_confidence, 2),
             'predicted_resolution_days': predicted_days,
             'analysis_time_seconds':    elapsed_total,
+            'analysis_report':          json.dumps(analysis_report)
         }
+
+def calculate_dynamic_severity_advanced(confidence, similar_issues, description, category):
+    """Enhanced severity calculation"""
+    from .civic_ai import assess_damage_severity
+    score, level = assess_damage_severity(category, description, [])
+    
+    # Adjust based on confidence and duplicates
+    if similar_issues and len(similar_issues) > 2:
+        score += 1.0
+        
+    if confidence > 90:
+        score += 0.5
+        
+    score = min(10.0, max(1.0, score))
+    
+    if score >= 8: level = 'Critical'
+    elif score >= 6: level = 'High'
+    elif score >= 4: level = 'Medium'
+    else: level = 'Low'
+    
+    return round(score, 1), level
 
     # ── Knowledge base ────────────────────────────────────────────────────────
 

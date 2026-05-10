@@ -1,8 +1,12 @@
-from flask import Blueprint, render_template
+from flask import Blueprint, render_template, jsonify
 from flask_login import login_required
 from ..models import Issue
 
 main_bp = Blueprint("main", __name__)
+
+@main_bp.route("/api/health")
+def health():
+    return jsonify({"status": "ok", "message": "Jan Suvidha API running"})
 
 @main_bp.route("/")
 def index():

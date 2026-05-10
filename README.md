@@ -5,36 +5,39 @@ An AI-powered civic issue reporting and management platform with 3 platforms:
 2. **Backend API** - Flask server with AI/ML
 3. **Admin Dashboard** - For administrators
 
+---
+
 ## Features
 
 ### Mobile App (Citizens)
 - User Login/Registration
 - Report issues with photo + GPS + AI analysis
-- View all issues with search
+- View all issues with search & filter
 - Interactive map view
 - My reported issues tracking
 - Community forum
 - User profile with stats
-- Voice input for reporting
+- Notifications
 
-### Backend API
-- AI-powered image analysis (YOLO)
-- Automatic severity & priority calculation
-- Duplicate detection with embeddings
-- Smart department assignment
-- Sentiment analysis
-- Issue clustering
-- Anomaly detection
-- Natural language query
+### AI/ML Features (12+ Models)
+| # | Component | Technology | Purpose |
+|---|-----------|------------|---------|
+| 1 | YOLO Object Detection | YOLOv8 (Custom) | Detect civic issues in images |
+| 2 | Issue Classification | Custom Model | Categorize: Roads, Sanitation, Traffic, etc. |
+| 3 | Severity Assessment | ML Model | Calculate severity (1-10) |
+| 4 | Smart Department Routing | Keyword + ML | Assign to PWD, Sanitation, Traffic, etc. |
+| 5 | Resolution Prediction | ML Model | Predict days to fix |
+| 6 | Sentiment Analysis | NLP | Detect urgency from text |
+| 7 | Hotspot Prediction | ML Regression | Predict problem areas |
+| 8 | Description Generation | Ollama/Llama 3 | Auto-generate descriptions |
 
 ### Admin Dashboard
 - Overview with charts & stats
 - Issue management (filter, edit, assign)
-- Department CRUD & efficiency tracking
+- Department CRUD
 - Analytics & reports
 - User management
-- Settings configuration
-- CSV export
+- Real-time data from MongoDB
 
 ---
 
@@ -48,7 +51,7 @@ Make sure MongoDB is running (default: localhost:27017)
 cd backend
 python run.py
 ```
-Backend runs at: `http://192.168.29.159:5000` (binds to 0.0.0.0)
+Backend runs at: `http://YOUR_IP:5000` (binds to 0.0.0.0)
 
 ### 3. Mobile App
 ```powershell
@@ -57,7 +60,6 @@ npm install
 npx expo start
 ```
 - Scan QR code with Expo Go on phone
-- Or build APK for standalone use
 - Make sure phone is on same WiFi as backend laptop
 
 ### 4. Admin Dashboard
@@ -69,21 +71,45 @@ Open `admin_dashboard/index.html` in browser
 
 ---
 
+## Custom YOLO Model
+
+The project uses a custom-trained YOLO model for civic issue detection:
+
+**Model file**: `models_ai/last_jansuvidha.pt`
+
+**10 Trained Classes**:
+1. Pothole Issues
+2. Damaged Road issues
+3. Illegal Parking Issues
+4. Broken Road Sign Issues
+5. Fallen trees
+6. Littering/Garbage on Public Places
+7. Vandalism Issues
+8. Dead Animal Pollution
+9. Damaged concrete structures
+10. Damaged Electric wires and poles
+
+---
+
 ## Configuration
 
-### Update IP Address
+### Find Your IP Address
+```powershell
+ipconfig
+```
+Look for IPv4 Address (e.g., `10.138.152.42`)
 
-**Mobile** (`mobile/App.js` line ~31):
+### Update IP in Mobile App
+Edit `mobile/App.js`:
 ```javascript
-const API_URL = 'http://192.168.29.159:5000';
+const API_URL = 'http://YOUR_IP:5000';
 ```
 
-**Admin** (`admin_dashboard/index.html` line ~938):
+### Update IP in Admin Dashboard
+Edit `admin_dashboard/src/admin-logic.js`:
 ```javascript
-const API_BASE = 'http://192.168.29.159:5000';
+const API_BASE = 'http://YOUR_IP:5000';
 ```
-
-Find your IP by running `ipconfig` on Windows.
 
 ---
 
@@ -103,25 +129,28 @@ db.users.updateOne({"email": "admin@email.com"}, {$set: {"role": "admin"}})
 crowdsourced-civic-issue-and-resolution-system/
 ├── backend/              # Flask API Server
 │   ├── app/
-│   │   ├── routes/      # auth, issues, admin, api, forum, chat
-│   │   ├── services/    # AI services
-│   │   ├── models.py    # MongoDB models
-│   │   └── config.py    # Configuration
-│   ├── uploads/         # Uploaded images
-│   └── run.py           # Entry point
+│   │   ├── routes/       # auth, issues, admin, api, forum
+│   │   ├── services/     # AI services (ai_service, civic_ai, advanced_ai)
+│   │   ├── models.py     # MongoDB models
+│   │   └── config.py     # Configuration
+│   ├── uploads/          # Uploaded images
+│   ├── models_ai/        # YOLO models (last_jansuvidha.pt)
+│   └── run.py            # Entry point
 │
-├── mobile/              # React Native/Expo App
-│   ├── src/screens/     # 9 screens
+├── mobile/               # React Native/Expo App
+│   ├── src/screens/     # 10 screens
 │   ├── App.js           # Main app
 │   └── package.json
 │
-├── admin_dashboard/     # HTML Admin Dashboard
-│   └── index.html
+├── admin_dashboard/      # HTML Admin Dashboard
+│   ├── index.html
+│   ├── css/
+│   └── src/
 │
-├── models_ai/           # YOLO models
-├── scripts/            # Helper scripts
-├── .venv/              # Python environment
-└── README.md           # This file
+├── models_ai/            # AI Models
+│   └── last_jansuvidha.pt
+│
+└── README.md            # This file
 ```
 
 ---
@@ -133,38 +162,33 @@ crowdsourced-civic-issue-and-resolution-system/
 | `/auth/register` | POST | User registration |
 | `/auth/login` | POST | User login |
 | `/issues/report` | POST | Report new issue |
-| `/issues/view` | GET | List all issues |
+| `/issues/view` | GET | List all issues (JSON) |
 | `/issues/my` | GET | User's issues |
 | `/issues/<id>/upvote` | POST | Upvote issue |
+| `/api/analyze-image` | POST | AI image analysis |
+| `/api/test-yolo` | POST | Debug YOLO detection |
+| `/api/health` | GET | API health check |
 | `/admin/dashboard` | GET | Admin stats |
 | `/admin/issues/<id>/status` | POST | Update status |
-| `/api/analyze-image` | POST | AI image analysis |
-| `/api/analyze-text` | POST | AI text analysis |
-| `/api/cluster-issues` | GET | Issue clustering |
-| `/api/detect-anomalies` | GET | Anomaly detection |
-| `/api/natural-query` | POST | AI search query |
-| `/api/user/stats` | GET | User statistics |
-| `/api/notifications` | GET | Notifications |
-| `/api/search` | GET | Issue search |
 
 ---
 
 ## Tech Stack
 
 - **Backend**: Flask, Flask-Login, MongoDB (MongoEngine)
-- **AI/ML**: YOLO, Sentence-Transformers, SVM, Ollama
+- **AI/ML**: YOLO v8 (Custom), Ollama/Llama 3, NLP
 - **Mobile**: React Native, Expo
 - **Database**: MongoDB
-- **Admin**: HTML, Bootstrap 5, Chart.js
+- **Admin**: HTML5, Bootstrap 5, Chart.js
 
 ---
 
 ## Prerequisites
 
 - Python 3.10+
-- MongoDB (local or Atlas) - required for backend
+- MongoDB (local or Atlas) - required
 - Node.js (for mobile)
-- Ollama (optional - AI features work with fallback even without it)
+- Ollama (optional - AI works with fallback)
 
 ---
 
@@ -176,12 +200,15 @@ crowdsourced-civic-issue-and-resolution-system/
 | Mobile app not loading | Keep backend running, ensure same WiFi |
 | Login fails | Use admin@js.com / admin123 for admin |
 | Camera not working | Grant camera permission on phone |
-| AI analysis shows fallback | Normal - AI works even without Ollama/YOLO |
+| AI analysis timeout | Increase timeout or check backend logs |
+| YOLO not detecting | Check image quality - needs clear civic issue |
+
+---
 
 ## Additional Documentation
 
-- `PROJECT_DOCUMENTATION.md` - Complete project reference for developers
-- `PRESENTATION_CONTENT.md` - Presentation outline for final demo
+- `PROJECT_DOCUMENTATION.md` - Complete project reference
+- `PRESENTATION_CONTENT.md` - Presentation outline for demo
 
 ---
 

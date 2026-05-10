@@ -1,4 +1,5 @@
 import os
+import json
 from datetime import datetime
 from flask import Blueprint, request, jsonify, current_app
 from werkzeug.utils import secure_filename
@@ -6,86 +7,100 @@ from .issues import ai_analyzer
 
 api_bp = Blueprint("api", __name__, url_prefix="/api")
 
+# Test endpoint for debugging YOLO
+@api_bp.route("/test-yolo", methods=["POST"])
+def test_yolo():
+    """Debug endpoint - test YOLO detection directly"""
+    try:
+        file = request.files.get("image")
+        if not file:
+            return jsonify({"error": "No image provided"}), 400
+
+        # Save temp file
+        upload_folder = current_app.config['UPLOAD_FOLDER']
+        os.makedirs(upload_folder, exist_ok=True)
+        
+        filename = f"debug_{datetime.now().timestamp()}_{secure_filename(file.filename)}"
+        path = os.path.join(upload_folder, filename)
+        file.save(path)
+        
+        print(f"\n========== YOLO TEST ==========")
+        print(f"Image saved: {path}")
+        
+        # Run detection
+        from app.services.ai_service import CivicAIAnalyzer
+        analyzer = CivicAIAnalyzer()
+        
+        objects = analyzer.analyze_image(path)
+        
+        print(f"Raw YOLO result: {objects}")
+        print(f"========== END TEST ==========\n")
+        
+        # Clean up
+        try:
+            os.remove(path)
+        except:
+            pass
+        
+        return jsonify({
+            "success": True,
+            "objects": objects,
+            "yolo_classes": analyzer.yolo_classes,
+            "model_loaded": analyzer.yolo is not None
+        })
+        
+    except Exception as e:
+        import traceback
+        return jsonify({
+            "error": str(e),
+            "trace": traceback.format_exc()
+        }), 500
+
 @api_bp.route("/analyze-image", methods=["POST"])
 def analyze_image_api():
     try:
         file = request.files.get("image")
         location = request.form.get("location", "Unknown")
+        user_description = request.form.get("description", "")
         if not file:
             return jsonify({"error": "No image provided"}), 400
 
+        # Ensure upload folder exists
+        upload_folder = current_app.config['UPLOAD_FOLDER']
+        os.makedirs(upload_folder, exist_ok=True)
+
         filename = f"tmp_{datetime.now().timestamp()}_{secure_filename(file.filename)}"
-        path = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
+        path = os.path.join(upload_folder, filename)
         file.save(path)
+        
+        print(f"[API] Image saved to: {path}")
 
         try:
-            from ..models import Issue
-            import concurrent.futures
-            existing_issues = list(Issue.objects()[:30])  # limit to 30 for speed
-
-            # Run AI analysis with 12-second timeout so mobile doesn't hang
-            def _run_ai():
-                return ai_analyzer.analyze_civic_issue(path, location, existing_issues)
-
-            with concurrent.futures.ThreadPoolExecutor(max_workers=1) as ex:
-                future = ex.submit(_run_ai)
-                try:
-                    result = future.result(timeout=12)
-                    if isinstance(result, dict):
-                        return jsonify(result)
-                except concurrent.futures.TimeoutError:
-                    print("[AI] Analysis timed out (>12s) – using fast fallback")
+            # Run AI directly (no thread) - more reliable
+            result = ai_analyzer.analyze_civic_issue(path, location, [], user_description=user_description)
+            print(f"[API] AI completed successfully, category: {result.get('category')}")
+            return jsonify(result), 200
         except Exception as ai_error:
-            print(f"AI analysis error (using smart fallback): {ai_error}")
-
-        # Smart fallback – uses real keyword classifiers, not random
-        try:
-            from ..services.civic_ai import classify_issue_type, assess_damage_severity
-            from ..services.advanced_ai import analyze_sentiment, smart_assign_department, predict_resolution_days
-
-            # Derive text hints from filename + location
-            hint_text = f"{os.path.basename(path)} {location}"
-            category, subclass, cat_conf = classify_issue_type(hint_text, [])
-            severity_score, severity_level = assess_damage_severity(category, hint_text, [])
-            sentiment = analyze_sentiment(location)
-            dept, dept_conf = smart_assign_department(category, hint_text, [])
-            pred_days = predict_resolution_days(category, severity_level)
-
-            detected_objects = [{'label': subclass, 'confidence': round(cat_conf, 1)}]
-            desc = (f"A {category.replace('_', ' ')} issue has been detected at {location}. "
-                    f"Analysis indicates a {severity_level.lower()} severity concern requiring "
-                    f"attention from {dept}.")
-
+            print(f"[API] AI error: {ai_error}")
+            import traceback
+            traceback.print_exc()
             return jsonify({
-                'description':              desc,
-                'category':                 category,
-                'detected_objects':         detected_objects,
-                'confidence':               round(cat_conf, 1),
-                'severity':                 severity_level,
-                'priority':                 'High' if severity_level in ('High', 'Critical') else severity_level,
-                'similar_issues_count':     0,
-                'duplicate_detected':       False,
-                'sentiment':                sentiment['sentiment'],
-                'urgency_score':            round(sentiment['urgency_score'], 2),
-                'assigned_department':      dept,
-                'department_confidence':    round(dept_conf, 2),
-                'predicted_resolution_days': pred_days,
-                'ai_fallback':              True,
-            })
-        except Exception as fallback_err:
-            print(f"Smart fallback error: {fallback_err}")
-            return jsonify({
-                'description': f'Civic issue detected at {location}. Manual classification required.',
+                'error': str(ai_error),
                 'category': 'general',
-                'severity': 'Medium',
-                'priority': 'Medium',
-                'assigned_department': 'Municipal Corporation',
-                'ai_error': str(fallback_err)
+                'confidence': 0,
+                'ai_detected': False
             }), 200
+        
     except Exception as e:
         current_app.logger.exception("analyze-image error")
         return jsonify({
-            'description': 'Civic issue detected at location. Manual classification required.',
+            'error': f'Server error: {str(e)}',
+            'category': 'general',
+            'confidence': 0,
+            'ai_detected': False
+        }), 500
+        return jsonify({
+            'description': user_description if 'user_description' in locals() and user_description and len(user_description.strip()) > 5 else 'Civic issue detected at location. Manual classification required.',
             'category': 'general',
             'severity': 'Medium',
             'priority': 'Medium',
@@ -120,27 +135,11 @@ def analyze_text_api():
                 "predicted_resolution_days": predicted_days
             })
         except Exception as ai_err:
-            print(f"Text AI error (using fallback): {ai_err}")
-            # Fallback
-            import random
-            departments = ['PWD', 'Sanitation Department', 'Water Department', 'Electricity Department']
-            keywords = []
-            text_lower = text.lower()
-            if any(w in text_lower for w in ['water', 'leak', 'drain']): keywords.append('water')
-            if any(w in text_lower for w in ['road', 'pothole', 'crack']): keywords.append('roads')
-            if any(w in text_lower for w in ['garbage', 'trash', 'waste']): keywords.append('sanitation')
-            if any(w in text_lower for w in ['light', 'electric', 'power']): keywords.append('electricity')
-            
+            print(f"Text AI error: {ai_err}")
             return jsonify({
-                "text": text,
-                "sentiment": "normal",
-                "urgency_score": 0.5,
-                "detected_keywords": keywords,
-                "recommended_department": random.choice(departments),
-                "department_confidence": 0.75,
-                "predicted_resolution_days": random.randint(3, 10),
-                "ai_fallback": True
-            })
+                "error": f"Text analysis failed: {str(ai_err)}",
+                "ai_detected": False
+            }), 500
     except Exception as e:
         current_app.logger.exception("analyze-text error")
         return jsonify({"error": str(e)}), 500

@@ -42,59 +42,53 @@
     </div>
 
     <!-- Dashboard -->
-    <div id="dashboardScreen" style="display: none;">
+    <div id="dashboardScreen">
         
         <!-- Sidebar -->
         <div class="sidebar">
             <div class="sidebar-brand">
-                <i class="bi bi-geo-alt-fill"></i>Jan Suvidha
+                <i class="bi bi-geo-alt-fill"></i><span>Jan Suvidha</span>
             </div>
             
             <div class="nav-item active" onclick="showPage('overview', this)">
-                <i class="bi bi-speedometer2"></i>Overview
+                <i class="bi bi-speedometer2"></i><span>Overview</span>
             </div>
             <div class="nav-item" onclick="showPage('issues', this)">
-                <i class="bi bi-inbox"></i>All Issues
+                <i class="bi bi-inbox"></i><span>All Issues</span>
                 <span class="badge bg-warning text-dark" id="issueCountBadge">0</span>
             </div>
             <div class="nav-item" onclick="showPage('departments', this)">
-                <i class="bi bi-building"></i>Departments
+                <i class="bi bi-building"></i><span>Departments</span>
             </div>
             <div class="nav-item" onclick="showPage('analytics', this)">
-                <i class="bi bi-graph-up"></i>Analytics
+                <i class="bi bi-graph-up-arrow"></i><span>Analytics</span>
             </div>
             <div class="nav-item" onclick="showPage('users', this)">
-                <i class="bi bi-people"></i>Users
+                <i class="bi bi-people"></i><span>Users</span>
             </div>
             <div class="nav-item" onclick="showPage('settings', this)">
-                <i class="bi bi-gear"></i>Settings
+                <i class="bi bi-gear"></i><span>Settings</span>
             </div>
             
-            <div style="position: absolute; bottom: 20px; left: 20px; right: 20px;">
+            <div style="margin-top: auto;">
                 <div class="nav-item" onclick="logout()">
-                    <i class="bi bi-box-arrow-left"></i>Logout
+                    <i class="bi bi-box-arrow-left"></i><span>Logout</span>
                 </div>
             </div>
         </div>
 
-        <!-- Main Content -->
+<!-- Main Content -->
         <div class="main-content">
             
             <!-- AI Powered Banner -->
-            <div style="background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%); padding: 15px 20px; margin-bottom: 20px; border-radius: 12px; color: white;">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <div style="font-size: 16px; font-weight: 700;">
-                            <i class="bi bi-cpu me-2"></i> AI-Powered Civic Management - <span id="cityName">Indore Region</span>
-                        </div>
-                        <div style="font-size: 13px; opacity: 0.9; margin-top: 4px;">
-                            Smart classification • Hotspot prediction • Priority scoring • Resolution forecasting
-                        </div>
-                    </div>
-                    <div style="text-align: right;">
-                        <div style="font-size: 24px; font-weight: bold;">14 AI</div>
-                        <div style="font-size: 11px; opacity: 0.8;">Models Active</div>
-                    </div>
+            <div class="ai-banner">
+                <div class="ai-banner-left">
+                    <h4><i class="bi bi-cpu me-2"></i> AI-Powered Civic Management</h4>
+                    <p>Smart classification - Hotspot prediction - Priority scoring - Resolution forecasting</p>
+                </div>
+                <div class="ai-banner-right">
+                    <div class="ai-count">14</div>
+                    <div class="ai-label">AI Models Active</div>
                 </div>
             </div>
             
@@ -115,95 +109,73 @@
                     </div>
                 </div>
 
-                <!-- Stats -->
-                <div class="row g-4 mb-4">
-                    <div class="col-md-3">
-                        <div class="stat-card">
-                            <div class="d-flex justify-content-between">
-                                <div>
-                                    <div class="stat-label">Total Issues</div>
-                                    <div class="stat-number" id="statTotal">0</div>
-                                </div>
-                                <div class="stat-icon bg-primary bg-opacity-10 text-primary"><i class="bi bi-inbox"></i></div>
-                            </div>
+                <!-- Stats Grid -->
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-card-icon primary"><i class="bi bi-inbox"></i></div>
+                        <h3>Total Issues</h3>
+                        <div class="stat-number" id="statTotal">0</div>
+                        <div class="stat-change up"><i class="bi bi-arrow-up"></i> All time</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-card-icon warning"><i class="bi bi-clock"></i></div>
+                        <h3>Pending</h3>
+                        <div class="stat-number" id="statPending">0</div>
+                        <div class="stat-change down"><i class="bi bi-arrow-down"></i> Awaiting action</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-card-icon success"><i class="bi bi-check-circle"></i></div>
+                        <h3>Resolved</h3>
+                        <div class="stat-number" id="statResolved">0</div>
+                        <div class="stat-change up"><i class="bi bi-arrow-up"></i> This month</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-card-icon danger"><i class="bi bi-exclamation-triangle"></i></div>
+                        <h3>Critical</h3>
+                        <div class="stat-number" id="statCritical">0</div>
+                        <div class="stat-change down"><i class="bi bi-arrow-down"></i> Urgent</div>
+                    </div>
+                </div>
+
+
+<!-- Charts Grid -->
+                <div class="charts-grid">
+                    <div class="chart-card">
+                        <h4><i class="bi bi-pie-chart"></i> Issues by Status</h4>
+                        <div class="chart-container">
+                            <canvas id="statusChart"></canvas>
                         </div>
                     </div>
-                    <div class="col-md-3">
-                        <div class="stat-card">
-                            <div class="d-flex justify-content-between">
-                                <div>
-                                    <div class="stat-label">Pending</div>
-                                    <div class="stat-number text-warning" id="statPending">0</div>
-                                </div>
-                                <div class="stat-icon bg-warning bg-opacity-10 text-warning"><i class="bi bi-clock"></i></div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="stat-card">
-                            <div class="d-flex justify-content-between">
-                                <div>
-                                    <div class="stat-label">Resolved</div>
-                                    <div class="stat-number text-success" id="statResolved">0</div>
-                                </div>
-                                <div class="stat-icon bg-success bg-opacity-10 text-success"><i class="bi bi-check-circle"></i></div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="stat-card">
-                            <div class="d-flex justify-content-between">
-                                <div>
-                                    <div class="stat-label">Critical</div>
-                                    <div class="stat-number text-danger" id="statCritical">0</div>
-                                </div>
-                                <div class="stat-icon bg-danger bg-opacity-10 text-danger"><i class="bi bi-exclamation-triangle"></i></div>
-                            </div>
+                    <div class="chart-card">
+                        <h4><i class="bi bi-graph-up"></i> Daily Trend (14 Days)</h4>
+                        <div class="chart-container">
+                            <canvas id="dailyChart"></canvas>
                         </div>
                     </div>
                 </div>
 
-                <!-- Charts -->
-                <div class="row g-4 mb-4">
-                    <div class="col-md-6">
-                        <div class="chart-container">
-                            <h5 class="fw-bold mb-3">Issues by Status</h5>
-                            <canvas id="statusChart" height="200"></canvas>
-                        </div>
+                <!-- Recent Issues Table -->
+                <div class="table-card">
+                    <div class="table-header">
+                        <h4><i class="bi bi-inbox me-2"></i>Recent Issues</h4>
+                        <button class="btn btn-sm btn-outline-primary" onclick="showPage('issues')">View All</button>
                     </div>
-                    <div class="col-md-6">
-                        <div class="chart-container">
-                            <h5 class="fw-bold mb-3">Daily Trend (14 Days)</h5>
-                            <canvas id="dailyChart" height="200"></canvas>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Recent Issues -->
-                <div class="row">
-                    <div class="col-12">
-                        <div class="data-table">
-                            <div class="p-3 border-bottom d-flex justify-content-between align-items-center">
-                                <h5 class="fw-bold mb-0">Recent Issues</h5>
-                                <button class="btn btn-sm btn-outline-primary" onclick="showPage('issues')">View All</button>
-                            </div>
-                            <table class="table table-hover mb-0">
-                                <thead>
-                                    <tr>
-                                        <th>Issue</th>
-                                        <th>Location</th>
-                                        <th>Status</th>
-<th>Severity</th>
-                                            <th>Priority</th>
-                                            <th>Upvotes</th>
-                                        <th>Action</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="recentIssuesTable">
-                                    <tr><td colspan="6" class="text-center py-4"><div class="spinner-border text-primary"></div></td></tr>
-                                </tbody>
-                            </table>
-                        </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Issue</th>
+                                    <th>Location</th>
+                                    <th>Status</th>
+                                    <th>Severity</th>
+                                    <th>Upvotes</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="recentIssuesTable">
+                                <tr><td colspan="6" class="text-center py-4"><div class="spinner-border text-primary"></div></td></tr>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>
@@ -226,42 +198,36 @@
                 </div>
 
                 <!-- Filters -->
-                <div class="actions-bar">
-                    <div class="search-box flex-grow-1">
-                        <i class="bi bi-search text-muted"></i>
-                        <input type="text" id="searchInput" placeholder="Search issues by title, location..." onkeyup="filterIssues()">
+                <div class="filter-bar">
+                    <div style="flex: 1; min-width: 200px;">
+                        <input type="text" id="searchInput" placeholder="Search issues..." onkeyup="filterIssues()" style="width: 100%;">
                     </div>
-                    <div class="filter-group">
-                        <div class="ai-query-box">
-                            <i class="bi bi-robot text-primary"></i>
-                            <input type="text" id="aiQueryInput" placeholder="Ask AI: 'show high priority water issues this week'">
-                            <button class="btn btn-sm btn-primary" onclick="runAIQuery()">Ask</button>
-                        </div>
+                    <div style="flex: 2; min-width: 300px; display: flex; gap: 8px;">
+                        <input type="text" id="aiQueryInput" placeholder="Ask AI: 'show high priority water issues'" style="flex: 1;" onkeypress="if(event.key==='Enter') runAIQuery()">
+                        <button class="btn btn-primary btn-sm" onclick="runAIQuery()">Ask</button>
                     </div>
-                        <select class="form-select" id="statusFilter" onchange="filterIssues()">
-                            <option value="">All Status</option>
-                            <option value="Pending">Pending</option>
-                            <option value="In Progress">In Progress</option>
-                            <option value="Resolved">Resolved</option>
-                            <option value="Linked">Linked</option>
-                        </select>
-                        <select class="form-select" id="severityFilter" onchange="filterIssues()">
-                            <option value="">All Severity</option>
-                            <option value="High">High</option>
-                            <option value="Medium">Medium</option>
-                            <option value="Low">Low</option>
-                        </select>
-                        <select class="form-select" id="priorityFilter" onchange="filterIssues()">
+                    <select class="form-select" id="statusFilter" onchange="filterIssues()" style="width: auto;">
+                        <option value="">All Status</option>
+                        <option value="Pending">Pending</option>
+                        <option value="In Progress">In Progress</option>
+                        <option value="Resolved">Resolved</option>
+                        <option value="Linked">Linked</option>
+                    </select>
+                    <select class="form-select" id="severityFilter" onchange="filterIssues()" style="width: auto;">
+                        <option value="">All Severity</option>
+                        <option value="High">High</option>
+                        <option value="Medium">Medium</option>
+                        <option value="Low">Low</option>
+                    <select class="form-select" id="priorityFilter" onchange="filterIssues()" style="width: auto;">
                             <option value="">All Priority</option>
                             <option value="Urgent">Urgent</option>
                             <option value="High">High</option>
                             <option value="Medium">Medium</option>
                             <option value="Low">Low</option>
                         </select>
-                        <button class="btn btn-outline-secondary" onclick="clearFilters()">
-                            <i class="bi bi-x-lg"></i>
-                        </button>
-                    </div>
+                    <button class="btn btn-outline-secondary" onclick="clearFilters()">
+                        <i class="bi bi-x-lg"></i>
+                    </button>
                 </div>
 
                 <!-- Bulk Actions -->
@@ -277,31 +243,31 @@
                 </div>
 
                 <!-- Table -->
-                <div class="data-table">
-                    <table class="table table-hover">
-                        <thead>
-                            <tr>
-                                <th><input type="checkbox" class="form-check-input" onchange="toggleSelectAll()"></th>
-                                <th>ID</th>
-                                <th>Issue</th>
-                                <th>Location</th>
-                                <th>Status</th>
-                                <th>Severity</th>
-                                <th>Votes</th>
-                                <th>Assigned</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="issuesTable">
-                            <tr><td colspan="9" class="text-center py-4"><div class="spinner-border text-primary"></div></td></tr>
-                        </tbody>
-                    </table>
-                </div>
-
-                <!-- Pagination -->
-                <div class="d-flex justify-content-between align-items-center mt-3">
-                    <span id="paginationInfo" class="text-muted">Showing 0 of 0</span>
-                    <nav><ul class="pagination" id="pagination"></ul></nav>
+                <div class="table-card">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th><input type="checkbox" class="form-check-input" onchange="toggleSelectAll()"></th>
+                                    <th>ID / Photo</th>
+                                    <th>Issue Details</th>
+                                    <th>Location</th>
+                                    <th>Status</th>
+                                    <th>Severity</th>
+                                    <th>Votes</th>
+                                    <th>Assigned</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="issuesTable">
+                                <tr><td colspan="9" class="text-center py-4"><div class="spinner-border text-primary"></div></td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="pagination-container">
+                        <span id="paginationInfo" class="pagination-info">Showing 0 of 0</span>
+                        <div class="pagination-buttons" id="paginationButtons"></div>
+                    </div>
                 </div>
             </div>
 
@@ -342,61 +308,7 @@
                             </tr>
                         </thead>
                         <tbody id="deptTable">
-                            <tr>
-                                <td><strong>Public Works Department (PWD)</strong></td>
-                                <td>pwd@jansuvidha.gov.in</td>
-                                <td><span class="badge bg-primary">45</span></td>
-                                <td><span class="badge bg-success">32</span></td>
-                                <td><span class="badge bg-warning">13</span></td>
-                                <td>
-                                    <button class="btn btn-sm btn-outline-primary me-1" onclick="alert('Edit PWD')"><i class="bi bi-pencil"></i></button>
-                                    <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td><strong>Sanitation Department</strong></td>
-                                <td>sanitation@jansuvidha.gov.in</td>
-                                <td><span class="badge bg-primary">38</span></td>
-                                <td><span class="badge bg-success">28</span></td>
-                                <td><span class="badge bg-warning">10</span></td>
-                                <td>
-                                    <button class="btn btn-sm btn-outline-primary me-1"><i class="bi bi-pencil"></i></button>
-                                    <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td><strong>Water Department</strong></td>
-                                <td>water@jansuvidha.gov.in</td>
-                                <td><span class="badge bg-primary">25</span></td>
-                                <td><span class="badge bg-success">20</span></td>
-                                <td><span class="badge bg-warning">5</span></td>
-                                <td>
-                                    <button class="btn btn-sm btn-outline-primary me-1"><i class="bi bi-pencil"></i></button>
-                                    <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td><strong>Electricity Department</strong></td>
-                                <td>electricity@jansuvidha.gov.in</td>
-                                <td><span class="badge bg-primary">18</span></td>
-                                <td><span class="badge bg-success">15</span></td>
-                                <td><span class="badge bg-warning">3</span></td>
-                                <td>
-                                    <button class="btn btn-sm btn-outline-primary me-1"><i class="bi bi-pencil"></i></button>
-                                    <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td><strong>Traffic Department</strong></td>
-                                <td>traffic@jansuvidha.gov.in</td>
-                                <td><span class="badge bg-primary">12</span></td>
-                                <td><span class="badge bg-success">8</span></td>
-                                <td><span class="badge bg-warning">4</span></td>
-                                <td>
-                                    <button class="btn btn-sm btn-outline-primary me-1"><i class="bi bi-pencil"></i></button>
-                                    <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
-                                </td>
-                            </tr>
+                            <tr><td colspan="6" class="text-center py-4"><div class="spinner-border text-primary"></div></td></tr>
                         </tbody>
                     </table>
                 </div>

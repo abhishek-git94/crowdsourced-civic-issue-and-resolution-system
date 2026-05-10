@@ -23,15 +23,29 @@ const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
 // Use your computer's local IP address for same WiFi connection
-const API_URL = 'http://192.168.29.159:5000';
+const API_URL = 'http://10.138.152.42:5000';
 
 export default function App() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [serverConnected, setServerConnected] = useState(true);
 
   useEffect(() => {
     checkUser();
+    checkServerConnection();
   }, []);
+
+  const checkServerConnection = async () => {
+    try {
+      const response = await fetch(`${API_URL}/api/health`, {
+        method: 'GET',
+        headers: { 'Bypass-Tunnel-Reminder': 'true' }
+      });
+      setServerConnected(response.ok);
+    } catch (e) {
+      setServerConnected(false);
+    }
+  };
 
   const checkUser = async () => {
     try {

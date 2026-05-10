@@ -127,8 +127,11 @@ export default function ReportScreen({ API_URL, user }) {
       console.log('Location error:', error.message);
       Alert.alert(
         'Location Error',
-        'Could not get your location. Please enter it manually.',
-        [{ text: 'OK' }]
+        'Could not get your location. Please enable GPS or enter location manually.',
+        [
+          { text: 'Enter Manually', style: 'cancel' },
+          { text: 'Try Again', onPress: () => getLocation() }
+        ]
       );
     }
     
@@ -204,11 +207,14 @@ export default function ReportScreen({ API_URL, user }) {
       }
     } catch (e) {
       console.log('AI analysis error:', e);
-      Alert.alert(
-        'AI Analysis', 
-        'Could not connect to AI server. Make sure backend is running.\n\nUsing offline mode with basic classification.',
-        [{ text: 'OK' }]
-      );
+      // Show more helpful error message
+      let errorMsg = 'AI analysis failed. You can still submit the issue.';
+      if (e.message && e.message.includes('timeout')) {
+        errorMsg = 'AI taking too long. Submit your issue - analysis will work.';
+      } else if (e.message && e.message.includes('Network')) {
+        errorMsg = 'Cannot connect to server. Check if backend is running on port 5000.';
+      }
+      Alert.alert('AI Analysis', errorMsg, [{ text: 'OK' }]);
     }
     setAnalyzing(false);
   };

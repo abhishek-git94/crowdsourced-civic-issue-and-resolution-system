@@ -205,6 +205,29 @@ def update_status(issue_id):
     flash(f"Issue updated successfully.", "success")
     return redirect(url_for("admin.issues", status=status_filter))
 
+@admin_bp.route("/issues/<issue_id>/delete", methods=["POST"])
+@role_required("admin")
+def delete_issue(issue_id):
+    try:
+        issue = Issue.objects(id=issue_id).first()
+        if not issue:
+            if request.is_json or 'application/json' in request.headers.get('Accept', ''):
+                return jsonify({"success": False, "error": "Issue not found"}), 404
+            flash("Issue not found.", "danger")
+            return redirect(url_for("admin.issues"))
+        
+        issue.delete()
+        if request.is_json or 'application/json' in request.headers.get('Accept', ''):
+            return jsonify({"success": True})
+        
+        flash("Issue deleted.", "success")
+    except Exception as e:
+        if request.is_json or 'application/json' in request.headers.get('Accept', ''):
+            return jsonify({"success": False, "error": str(e)}), 500
+        flash("Database error deleting issue.", "danger")
+        
+    return redirect(url_for("admin.issues"))
+
 @admin_bp.route("/issues/<issue_id>/pdf")
 @role_required("admin")
 def issue_pdf(issue_id):
@@ -317,6 +340,19 @@ def list_users_api():
             })
         
         return jsonify({"success": True, "users": user_list})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+@admin_bp.route("/users/<user_id>/delete", methods=["POST"])
+@role_required("admin")
+def delete_user(user_id):
+    try:
+        user = User.objects(id=user_id).first()
+        if not user:
+            return jsonify({"success": False, "error": "User not found"}), 404
+        
+        user.delete()
+        return jsonify({"success": True})
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
 

@@ -16,19 +16,56 @@ SENTIMENT_KEYWORDS = {
 }
 
 DEPT_SCORES = {
-    'Public Works Department (PWD)': {'roads': 95, 'pothole': 90, 'infrastructure': 85, 'bridge': 90, 'footpath': 80},
-    'Sanitation Department': {'garbage': 95, 'waste': 90, 'litter': 85, 'dirty': 80, 'trash': 90},
+    # Roads - PWD
+    'Public Works Department (PWD)': {
+        'roads': 95, 'pothole': 90, 'infrastructure': 85, 'bridge': 90, 
+        'footpath': 80, 'road_damage': 92, 'sign_damage': 85, 'structure_damage': 88
+    },
+    # Sanitation
+    'Sanitation Department': {
+        'garbage': 95, 'waste': 90, 'litter': 85, 'dirty': 80, 'trash': 90,
+        'littering': 92, 'dead_animal': 88
+    },
+    # Water
     'Water Department': {'water': 95, 'leak': 90, 'drainage': 85, 'flooding': 80, 'overflow': 85},
-    'Electricity Department': {'electricity': 95, 'power': 90, 'light': 85, 'wire': 90, 'pole': 80},
-    'Parks and Gardens': {'parks': 95, 'garden': 90, 'trees': 85, 'greenery': 80, 'grass': 85},
-    'Traffic Department': {'traffic': 95, 'signal': 90, 'sign': 85, 'parking': 80, 'road_marking': 85},
-    'Health Department': {'health': 95, 'medical': 90, 'hospital': 85, 'disease': 80, ' sanitation': 90},
+    # Electricity
+    'Electricity Department': {
+        'electricity': 95, 'power': 90, 'light': 85, 'wire': 90, 'pole': 80,
+        'wire_damage': 95
+    },
+    # Parks
+    'Parks and Gardens': {
+        'parks': 95, 'garden': 90, 'trees': 85, 'greenery': 80, 'grass': 85,
+        'fallen_tree': 92
+    },
+    # Traffic
+    'Traffic Department': {
+        'traffic': 95, 'signal': 90, 'sign': 85, 'parking': 80, 'road_marking': 85,
+        'illegal_parking': 95
+    },
+    # Health
+    'Health Department': {'health': 95, 'medical': 90, 'hospital': 85, 'disease': 80, 'sanitation': 90},
+    # Fire
     'Fire Department': {'fire': 95, 'burning': 90, 'smoke': 85, 'gas': 80, 'hazard': 90}
 }
 
 RESOLUTION_BASELINE = {
-    'roads': 7, 'pothole': 3, 'garbage': 2, 'water': 5, 'electricity': 1,
-    'parks': 5, 'traffic': 3, 'health': 7, 'infrastructure': 14, 'default': 7
+    # Roads
+    'roads': 7, 'pothole': 3, 'road_damage': 5, 'sign_damage': 2, 'structure_damage': 7,
+    # Sanitation
+    'garbage': 2, 'littering': 2, 'dead_animal': 1,
+    # Water
+    'water': 5, 'leak': 3, 'drainage': 4,
+    # Electricity
+    'electricity': 1, 'wire_damage': 2,
+    # Parks
+    'parks': 5, 'fallen_tree': 1,
+    # Traffic
+    'traffic': 3, 'illegal_parking': 1,
+    # Infrastructure
+    'infrastructure': 14, 'vandalism': 5,
+    # Default
+    'default': 7
 }
 
 

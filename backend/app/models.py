@@ -42,6 +42,7 @@ class Issue(Document):
 
     status   = StringField(max_length=50, default="Pending")
     category = StringField(max_length=100)
+    sub_category = StringField(max_length=100)
     confidence            = FloatField()
     severity              = StringField(max_length=50)
     priority              = StringField(max_length=50, default="Low")
@@ -49,6 +50,7 @@ class Issue(Document):
     urgency_score         = FloatField()
     predicted_resolution_days = IntField()
     assigned_to           = StringField(max_length=100)
+    ai_analysis_report    = StringField() # JSON string containing detailed analysis
 
     is_confirmed_by_citizen = BooleanField(default=False)
     resolved_at             = DateTimeField()

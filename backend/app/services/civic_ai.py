@@ -9,64 +9,168 @@ from collections import defaultdict
 import random
 
 
+"""
+Unified Civic Issue Classification Engine
+-----------------------------------------
+Each category has:
+  - `classes`:   Specific subclass labels for the issue type
+  - `triggers`:  HIGH-WEIGHT keywords (single words AND short phrases) that strongly signal this category
+  - `hints`:     LOWER-WEIGHT context words that support classification but aren't conclusive alone
+  - `dept`:      Default department to route to
+"""
+
+# ---------------------------------------------------------------------------
+# CATEGORY DEFINITIONS
+# Each `trigger` keyword that matches gives +10 points.
+# Each `hint`    keyword that matches gives +3  points.
+# Subclass selection is done by matching trigger/hint words inside subclass names.
+# ---------------------------------------------------------------------------
 CIVIC_ISSUE_TYPES = {
     'roads': {
-        'classes': ['pothole', 'road_crack', 'manhole', 'speed_breaker', 'road_sign'],
-        'keywords': ['road', 'street', 'pothole', 'crack', 'hole', 'damage', 'broken', 'patch'],
-        'severity_factors': ['size', 'depth', 'location', 'traffic']
+        'classes': ['pothole', 'road_crack', 'manhole', 'speed_breaker', 'road_waterlogging', 'collapsed_road', 'road_damage'],
+        'triggers': [
+            'pothole', 'potholes', 'road crack', 'manhole', 'speed breaker', 'speedbreaker',
+            'asphalt', 'pavement', 'tarmac', 'road damage', 'road broken', 'broken road',
+            'highway damage', 'street crack', 'waterlogged road', 'road flooding'
+        ],
+        'hints': ['road', 'street', 'lane', 'highway', 'pathway', 'footpath', 'sidewalk', 'pit', 'hole'],
+        'severity_factors': ['size', 'depth', 'location', 'traffic'],
+        'dept': 'Public Works Department (PWD)'
     },
     'water': {
-        'classes': ['water_leak', 'clogged_drain', 'flooding', 'sewage', 'pipeline'],
-        'keywords': ['water', 'leak', 'drain', 'flood', 'sewage', 'pipe', 'overflow'],
-        'severity_factors': ['flow_rate', 'duration', 'area_affected']
+        'classes': ['water_leak', 'clogged_drain', 'flooding', 'sewage_overflow', 'pipeline_burst', 'contaminated_water', 'no_water_supply'],
+        'triggers': [
+            'water leak', 'pipe leak', 'pipe burst', 'burst pipe', 'sewage', 'flooding',
+            'water logging', 'waterlogging', 'drain overflow', 'clogged drain', 'open drain',
+            'water supply', 'no water', 'contaminated water', 'dirty water', 'stagnant water',
+            'overflowing drain', 'drainage', 'manhole overflow', 'sewer'
+        ],
+        'hints': ['water', 'drain', 'pipe', 'flood', 'overflow', 'leak', 'gutter', 'tap', 'well', 'tank', 'wet', 'submerged'],
+        'severity_factors': ['flow_rate', 'duration', 'area_affected'],
+        'dept': 'Water Department'
     },
     'sanitation': {
-        'classes': ['garbage_heap', 'dirty_area', 'dead_animal', 'open_defecation'],
-        'keywords': ['garbage', 'trash', 'waste', 'dirty', 'litter', 'smell', 'unclean'],
-        'severity_factors': ['size', 'smell_intensity', 'health_risk']
+        'classes': ['garbage_heap', 'overflowing_dustbin', 'dead_animal', 'open_defecation', 'hazardous_waste', 'dirty_public_area'],
+        'triggers': [
+            'garbage', 'garbage heap', 'trash', 'waste dump', 'litter', 'overflowing bin',
+            'dustbin', 'dumpster', 'open dump', 'rotting', 'stench', 'filth', 'dirty area',
+            'dead animal', 'open defecation', 'waste disposal', 'rubbish heap', 'refuse'
+        ],
+        'hints': ['waste', 'smell', 'unclean', 'dump', 'bin', 'debris', 'messy', 'unhygienic', 'junk'],
+        'severity_factors': ['size', 'smell_intensity', 'health_risk'],
+        'dept': 'Sanitation Department'
     },
     'electricity': {
-        'classes': ['broken_street_light', 'dangling_wire', 'exposed_wire', 'pole_damage'],
-        'keywords': ['light', 'electric', 'wire', 'pole', 'power', 'dark', 'dangerous'],
-        'severity_factors': ['exposure', 'voltage', 'location']
+        'classes': ['broken_street_light', 'dangling_wire', 'exposed_live_wire', 'electric_pole_damage', 'transformer_issue', 'power_outage'],
+        'triggers': [
+            'street light', 'streetlight', 'light pole', 'broken light', 'light not working',
+            'light out', 'no light', 'dark street', 'electric wire', 'hanging wire',
+            'dangling wire', 'live wire', 'exposed wire', 'broken pole', 'light pole broken',
+            'power cut', 'electricity gone', 'transformer', 'short circuit', 'electric shock',
+            'sparking wire', 'loose wire', 'fallen wire', 'wire fallen'
+        ],
+        'hints': ['light', 'pole', 'electric', 'power', 'wire', 'dark', 'voltage', 'current', 'electricity', 'cable', 'blackout'],
+        'severity_factors': ['exposure', 'voltage', 'location'],
+        'dept': 'Electricity Department'
     },
     'parks': {
-        'classes': ['broken_bench', 'damaged_tree', 'vandalism', 'broken_fence'],
-        'keywords': ['park', 'garden', 'tree', 'bench', 'fence', 'playground'],
-        'severity_factors': ['safety', 'usage']
+        'classes': ['broken_bench', 'damaged_tree', 'vandalism', 'broken_fence', 'playground_hazard', 'overgrown_grass'],
+        'triggers': [
+            'broken bench', 'damaged tree', 'fallen tree', 'broken fence', 'broken swing',
+            'broken slide', 'playground damage', 'park vandalism', 'overgrown grass',
+            'park light', 'garden waste', 'fountain broken'
+        ],
+        'hints': ['park', 'garden', 'tree', 'bench', 'playground', 'swing', 'slide', 'grass', 'lawn', 'fountain', 'greenery'],
+        'severity_factors': ['safety', 'usage'],
+        'dept': 'Parks and Gardens'
     },
     'traffic': {
-        'classes': ['traffic_light_broken', 'sign_missing', 'road_marking_faded'],
-        'keywords': ['traffic', 'signal', 'sign', 'marking', ' zebra'],
-        'severity_factors': ['accident_risk']
+        'classes': ['traffic_signal_broken', 'sign_missing', 'road_marking_faded', 'illegal_parking', 'traffic_congestion'],
+        'triggers': [
+            'traffic light', 'traffic signal', 'signal broken', 'zebra crossing', 'road sign',
+            'sign missing', 'road marking', 'illegal parking', 'traffic jam', 'no parking sign',
+            'speed limit sign', 'signal not working', 'traffic light broken'
+        ],
+        'hints': ['traffic', 'signal', 'sign', 'marking', 'junction', 'congestion', 'parking', 'bottleneck'],
+        'severity_factors': ['accident_risk'],
+        'dept': 'Traffic Department'
+    },
+    'infrastructure': {
+        'classes': ['building_damage', 'bridge_damage', 'wall_collapse', 'pillar_crack', 'staircase_damage', 'public_property_damage'],
+        'triggers': [
+            'bridge crack', 'bridge damage', 'building collapse', 'wall collapsed',
+            'wall crack', 'pillar crack', 'roof collapse', 'scaffolding', 'construction hazard',
+            'staircase broken', 'handrail broken', 'public building damage', 'compound wall'
+        ],
+        'hints': ['bridge', 'building', 'wall', 'pillar', 'structure', 'foundation', 'concrete', 'roof', 'railing'],
+        'severity_factors': ['public_safety', 'scale'],
+        'dept': 'Municipal Corporation'
     }
 }
 
+# Weights
+_W_TRIGGER = 10  # Strong signal — unique to this category
+_W_HINT    = 3   # Weak signal — could belong to multiple categories
+_W_SUBCLASS = 15 # Very strong — exact subclass match in description or object label
 
-def classify_issue_type(description, detected_objects):
+
+def classify_issue_type(description: str, detected_objects: list):
     """
-    Classify issue into specific civic category using keywords and detected objects
+    Classify civic issue using a tiered keyword scoring system.
+
+    Returns (category, subclass, confidence_pct)
     """
-    text = f"{description} {' '.join([o.get('label', '') for o in detected_objects])}".lower()
-    
-    scores = {}
-    for issue_type, config in CIVIC_ISSUE_TYPES.items():
+    description = (description or "").strip().lower()
+    obj_labels  = [o.get('label', '').lower().replace('_', ' ') for o in detected_objects]
+    # Combine description + object labels for matching
+    combined    = description + " " + " ".join(obj_labels)
+
+    scores        = {}
+    best_subclass = {}
+
+    for category, cfg in CIVIC_ISSUE_TYPES.items():
         score = 0
-        for keyword in config['keywords']:
-            if keyword in text:
-                score += 1
-        scores[issue_type] = score
-    
-    if max(scores.values()) == 0:
-        return 'general', 'general'
-    
-    best_type = max(scores, key=scores.get)
-    confidence = scores[best_type] / len(CIVIC_ISSUE_TYPES[best_type]['keywords'])
-    
-    sub_classes = CIVIC_ISSUE_TYPES[best_type]['classes']
-    best_subclass = sub_classes[scores[best_type] % len(sub_classes)] if scores[best_type] > 0 else sub_classes[0]
-    
-    return best_type, best_subclass, round(min(confidence * 100 + 50, 95), 1)
+
+        # --- Trigger matches (high weight) ---
+        for kw in cfg['triggers']:
+            if kw in combined:
+                score += _W_TRIGGER
+
+        # --- Hint matches (low weight) ---
+        for kw in cfg['hints']:
+            if kw in combined:
+                score += _W_HINT
+
+        scores[category] = score
+
+        # --- Determine best subclass for this category ---
+        best_cls  = cfg['classes'][0]
+        best_cs   = -1
+        for cls in cfg['classes']:
+            cs = 0
+            cls_readable = cls.replace('_', ' ')
+            if cls_readable in combined:
+                cs += _W_SUBCLASS
+            for word in cls.split('_'):
+                if len(word) > 3 and word in combined:
+                    cs += 3
+            if cs > best_cs:
+                best_cs  = cs
+                best_cls = cls
+        best_subclass[category] = best_cls
+
+    # If everything scored 0, return infrastructure as last resort
+    if not scores or max(scores.values()) == 0:
+        return 'infrastructure', 'public_property_damage', 40.0
+
+    best_cat = max(scores, key=scores.get)
+    sub      = best_subclass[best_cat]
+
+    # Normalise confidence: 40–99%
+    raw_conf = scores[best_cat]
+    conf     = min(99.0, max(40.0, raw_conf * 4.5))   # 10 pts trigger → 45% start; 2 triggers → 90%
+
+    return best_cat, sub, round(conf, 1)
 
 
 def assess_damage_severity(issue_type, description, detected_objects):

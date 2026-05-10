@@ -26,17 +26,24 @@ export default function HomeScreen({ API_URL, user, navigation }) {
 
   const fetchIssues = async () => {
     try {
-      const response = await fetch(`${API_URL}/view`, {
+      const response = await fetch(`${API_URL}/view?format=json`, {
         headers: {
           'Accept': 'application/json',
+          'Content-Type': 'application/json',
           'X-User-ID': user?.id || '',
           'Bypass-Tunnel-Reminder': 'true'
         }
       });
+      
+      if (!response.ok) {
+        console.log('Fetch issues HTTP error:', response.status, response.statusText);
+        return;
+      }
+      
       const data = await response.json();
       setIssues(data.issues || []);
     } catch (e) {
-      console.log('Fetch issues error:', e);
+      console.log('Fetch issues error:', e.message);
     }
   };
 

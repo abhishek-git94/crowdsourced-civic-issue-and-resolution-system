@@ -54,21 +54,51 @@ def view_issues():
         if search_query:
             issues = issues.filter(issue__icontains=search_query)
         
-        # If request expects JSON (Mobile App)
-        if request.is_json or request.args.get('format') == 'json' or 'application/json' in request.headers.get('Accept', ''):
+        # Check if JSON response requested - support multiple formats
+        accept_header = request.headers.get('Accept', '')
+        wants_json = (
+            request.is_json or 
+            request.args.get('format') == 'json' or 
+            'json' in accept_header.lower() or
+            request.args.get('json') == 'true'
+        )
+        
+        if wants_json:
             issue_list = []
             for i in issues:
+                user_data = None
+                try:
+                    if i.user and hasattr(i, 'user') and i.user.id:
+                        user_data = {
+                            "id": str(i.user.id),
+                            "name": i.user.name,
+                            "email": i.user.email
+                        }
+                except Exception as e:
+                    # User was deleted or invalid - skip user data
+                    pass
                 issue_list.append({
                     "id": str(i.id),
                     "issue": i.issue,
                     "location": i.location,
                     "latitude": i.latitude,
                     "longitude": i.longitude,
+                    "file": i.file,
                     "status": i.status,
                     "category": i.category,
+                    "sub_category": i.sub_category,
+                    "confidence": i.confidence,
                     "severity": i.severity,
+                    "priority": i.priority,
+                    "sentiment": i.sentiment,
+                    "urgency_score": i.urgency_score,
+                    "predicted_resolution_days": i.predicted_resolution_days,
+                    "assigned_to": i.assigned_to,
                     "upvotes": i.upvotes,
-                    "created_at": i.created_at.isoformat()
+                    "created_at": i.created_at.isoformat() if i.created_at else None,
+                    "user": user_data,
+                    "is_duplicate": i.is_duplicate_of is not None,
+                    "is_confirmed_by_citizen": i.is_confirmed_by_citizen
                 })
             return jsonify({"success": True, "issues": issue_list})
 
@@ -149,12 +179,15 @@ def upvote_issue(issue_id):
 @login_required
 def report_issue():
     if request.method == "POST":
+        is_api = bool(request.headers.get('X-User-ID') or request.is_json or 'application/json' in request.headers.get('Accept', ''))
         name = current_user.name
-        location = request.form.get("location", "")
+        data = request.get_json() if request.is_json else request.form
+        location = data.get("location", "")
+        issue_text_input = data.get("issue") or data.get("description", "")
         
         # Geolocation
-        lat_str = request.form.get("latitude", "")
-        lng_str = request.form.get("longitude", "")
+        lat_str = data.get("latitude", "")
+        lng_str = data.get("longitude", "")
         latitude = float(lat_str) if lat_str else None
         longitude = float(lng_str) if lng_str else None
 
@@ -173,7 +206,8 @@ def report_issue():
             existing_issues = Issue.objects()[:50]
 
             try:
-                analysis = ai_analyzer.analyze_civic_issue(full_path, location, existing_issues, department=None)
+                user_description = issue_text_input
+                analysis = ai_analyzer.analyze_civic_issue(full_path, location, existing_issues, department=None, user_description=user_description)
                 issue_text = analysis.get("description", "") if isinstance(analysis, dict) else ""
                 
                 # Check if this is a duplicate based on AI analysis
@@ -182,7 +216,7 @@ def report_issue():
                     if duplicate_id:
                         # Find the duplicate issue to show in confirmation
                         dup_issue = Issue.objects(id=duplicate_id).first()
-                        if dup_issue:
+                        if dup_issue and not is_api:
                             session["_pending_issue"] = {
                                 "name": name, "issue": issue_text, "location": location,
                                 "latitude": latitude, "longitude": longitude,
@@ -195,9 +229,9 @@ def report_issue():
                                 pending=session["_pending_issue"])
             except Exception:
                 current_app.logger.exception("AI analyze error")
-                issue_text = request.form.get("issue", "")
+                issue_text = issue_text_input
         else:
-            issue_text = request.form.get("issue", "")
+            issue_text = issue_text_input
 
         embed_text = f"{issue_text}\nLocation: {location}"
         try:
@@ -227,7 +261,7 @@ def report_issue():
                     except Exception: continue
             except Exception: pass
 
-        if similar:
+        if similar and not is_api:
             session["_pending_issue"] = {
                 "name": name, "issue": issue_text, "location": location,
                 "latitude": latitude, "longitude": longitude,
@@ -257,6 +291,7 @@ def report_issue():
                 latitude=latitude, longitude=longitude,
                 file=file_path, status="Pending",
                 category=category,
+                sub_category=(analysis.get("sub_category") if isinstance(analysis, dict) else None),
                 confidence=(analysis.get("confidence") if isinstance(analysis, dict) else None),
                 severity=(analysis.get("severity") if isinstance(analysis, dict) else None),
                 priority=(analysis.get("priority") if isinstance(analysis, dict) else "Low"),
@@ -265,6 +300,7 @@ def report_issue():
                 predicted_resolution_days=(analysis.get("predicted_resolution_days") if isinstance(analysis, dict) else None),
                 embedding=(embed_to_json(embedding) if embedding else None),
                 assigned_to=assigned_dept if assigned_dept else (analysis.get("assigned_department") if isinstance(analysis, dict) else 'Municipal Corporation'),
+                ai_analysis_report=(analysis.get("analysis_report") if isinstance(analysis, dict) else None),
                 user=current_user.id
             )
             new_issue.save()
@@ -275,8 +311,13 @@ def report_issue():
             
         except Exception as e:
             current_app.logger.error(f"Report save error: {e}")
+            if is_api:
+                return jsonify({"success": False, "error": "Database error. Could not save your report."}), 500
             flash("Database error. Could not save your report.", "danger")
             return redirect(url_for("issues.report_issue"))
+
+        if is_api:
+            return jsonify({"success": True, "issue_id": str(new_issue.id)})
 
         flash("Issue reported successfully! You earned 10 points.", "success")
         return redirect(url_for("issues.report_issue"))
@@ -476,11 +517,14 @@ def issue_detail(issue_id):
                     "longitude": issue.longitude,
                     "status": issue.status,
                     "category": issue.category,
+                    "sub_category": issue.sub_category,
                     "severity": issue.severity,
                     "upvotes": issue.upvotes,
                     "has_upvoted": has_voted,
                     "created_at": issue.created_at.isoformat(),
-                    "image_url": issue.image_url if hasattr(issue, 'image_url') else None
+                    "image_url": issue.image_url if hasattr(issue, 'image_url') else None,
+                    "ai_analysis_report": issue.ai_analysis_report,
+                    "is_confirmed_by_citizen": issue.is_confirmed_by_citizen
                 }
             })
         
