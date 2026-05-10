@@ -18,30 +18,32 @@ SENTIMENT_KEYWORDS = {
 DEPT_SCORES = {
     # Roads - PWD
     'Public Works Department (PWD)': {
-        'roads': 95, 'pothole': 90, 'infrastructure': 85, 'bridge': 90, 
-        'footpath': 80, 'road_damage': 92, 'sign_damage': 85, 'structure_damage': 88
+        'roads': 95, 'pothole': 95, 'road': 95, 'infrastructure': 85, 'bridge': 90, 
+        'footpath': 80, 'road_damage': 95, 'sign_damage': 85, 'structure_damage': 88,
+        'damaged road': 95, 'pothole issues': 95
     },
     # Sanitation
     'Sanitation Department': {
-        'garbage': 95, 'waste': 90, 'litter': 85, 'dirty': 80, 'trash': 90,
-        'littering': 92, 'dead_animal': 88
+        'garbage': 95, 'waste': 95, 'litter': 85, 'dirty': 80, 'trash': 90,
+        'littering': 95, 'dead_animal': 90, 'sanitation': 95,
+        'littering/garbage': 95
     },
     # Water
     'Water Department': {'water': 95, 'leak': 90, 'drainage': 85, 'flooding': 80, 'overflow': 85},
     # Electricity
     'Electricity Department': {
-        'electricity': 95, 'power': 90, 'light': 85, 'wire': 90, 'pole': 80,
-        'wire_damage': 95
+        'electricity': 95, 'power': 90, 'light': 85, 'wire': 95, 'pole': 80,
+        'wire_damage': 95, 'damaged electric': 95
     },
     # Parks
     'Parks and Gardens': {
-        'parks': 95, 'garden': 90, 'trees': 85, 'greenery': 80, 'grass': 85,
-        'fallen_tree': 92
+        'parks': 95, 'garden': 90, 'trees': 90, 'greenery': 80, 'grass': 85,
+        'fallen_tree': 95, 'fallen trees': 95
     },
     # Traffic
     'Traffic Department': {
         'traffic': 95, 'signal': 90, 'sign': 85, 'parking': 80, 'road_marking': 85,
-        'illegal_parking': 95
+        'illegal_parking': 95, 'illegal': 80
     },
     # Health
     'Health Department': {'health': 95, 'medical': 90, 'hospital': 85, 'disease': 80, 'sanitation': 90},
@@ -100,23 +102,36 @@ def smart_assign_department(category, description, detected_objects):
     if not category:
         return 'Municipal Corporation', 0.5
     
+    # Convert everything to lowercase for matching
     category_lower = category.lower()
-    combined_text = f"{category_lower} {description or ''} {' '.join([o.get('label', '') for o in detected_objects])}"
+    
+    # Build combined text - include YOLO labels too
+    yolo_labels = ' '.join([o.get('label', '').lower() for o in detected_objects])
+    combined_text = f"{category_lower} {description or ''} {yolo_labels}"
+    
+    print(f"[Dept Assignment] Category: {category}, Labels: {yolo_labels}")
+    print(f"[Dept Assignment] Combined: {combined_text[:100]}...")
     
     best_dept = 'Municipal Corporation'
-    best_score = 0.5
+    best_score = 0
     
     for dept, keywords in DEPT_SCORES.items():
         score = 0
         for kw, pts in keywords.items():
-            if kw in combined_text:
+            if kw.lower() in combined_text:
                 score += pts
+                print(f"[Dept] Matched '{kw}' in {dept} (+{pts})")
         
         if score > best_score:
-            best_score = score / 100
+            best_score = score
             best_dept = dept
     
-    return best_dept, best_score
+    # Normalize score to 0-1 range
+    confidence = min(0.99, best_score / 100) if best_score > 0 else 0.5
+    
+    print(f"[Dept] Selected: {best_dept} (score: {best_score}, conf: {confidence})")
+    
+    return best_dept, confidence
 
 
 def predict_resolution_days(category, severity, dept_workload_factor=1.0):
