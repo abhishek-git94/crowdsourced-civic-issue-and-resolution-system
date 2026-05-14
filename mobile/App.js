@@ -20,10 +20,11 @@ import NotificationsScreen from './src/screens/NotificationsScreen';
 import SettingsScreen from './src/screens/SettingsScreen';
 
 const Stack = createNativeStackNavigator();
-const Tab = createBottomTabNavigator();
+const Tab = createBottomTabNavigator(); 
 
-// Use your computer's local IP address for same WiFi connection
-const API_URL = 'http://10.138.152.42:5000';
+// const API_URL = 'http://10.138.152.42:5000';  //personal
+const API_URL = 'http://172.16.38.14:5000';
+
 
 export default function App() {
   const [user, setUser] = useState(null);
